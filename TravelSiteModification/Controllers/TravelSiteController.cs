@@ -9,6 +9,13 @@ namespace TravelSiteModification.Controllers
             return View();
         }
 
+        // LOGOUT
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login", "Account");
+        }
+
         [HttpPost]
         public IActionResult SearchHotels(string destination, string checkInDate, string checkOutDate)
         {
