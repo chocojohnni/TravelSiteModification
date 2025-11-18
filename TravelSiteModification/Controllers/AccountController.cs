@@ -58,7 +58,7 @@ namespace TravelSiteModification.Controllers
                     return Redirect(redirectPage);
                 }
 
-                return RedirectToAction("Index", "TravelSite");
+                return RedirectToAction("Index", "TravelSiteModification");
             }
 
             ModelState.AddModelError("", "Incorrect email or password.");
