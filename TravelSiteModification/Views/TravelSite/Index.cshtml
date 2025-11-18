@@ -1,0 +1,82 @@
+﻿@{
+    ViewData["Title"] = "Travel Site";
+    var userFirstName = ViewBag.UserFirstName;
+}
+
+<h2>Welcome to the Travel Site</h2>
+
+@if (userFirstName != null)
+{
+    <div class="alert alert-success">
+        Welcome, @userFirstName!
+    </div>
+}
+
+<hr />
+
+<h3>Search Hotels</h3>
+<form method="post" asp-action="SearchHotels">
+    <select name="destination">
+        <option value="NYC">New York</option>
+        <option value="LAX">Los Angeles</option>
+    </select>
+    <input type="date" name="checkInDate" />
+    <input type="date" name="checkOutDate" />
+    <button type="submit">Search Hotels</button>
+</form>
+
+<hr />
+
+<h3>Search Flights</h3>
+<form method="post" asp-action="SearchFlights">
+    <select name="origin">
+        <option value="SEA">Seattle</option>
+        <option value="NYC">New York</option>
+    </select>
+    <select name="destination">
+        <option value="LAX">Los Angeles</option>
+        <option value="MIA">Miami</option>
+    </select>
+    <button type="submit">Search Flights</button>
+</form>
+
+<hr />
+
+<h3>Search Cars</h3>
+<form method="post" asp-action="SearchCars">
+    <select name="pickupLocation">
+        <option value="SEA">Seattle</option>
+    </select>
+    <select name="dropoffLocation">
+        <option value="LAX">Los Angeles</option>
+    </select>
+    <input type="date" name="pickupDate" />
+    <input type="date" name="dropoffDate" />
+    <button type="submit">Search Cars</button>
+</form>
+
+<hr />
+
+<h3>Search Events</h3>
+<form method="post" asp-action="SearchEvents">
+    <select name="eventLocation">
+        <option value="NYC">New York</option>
+    </select>
+    <button type="submit">Search Events</button>
+</form>
+
+<hr />
+
+<h3>Search Vacation Packages</h3>
+<form method="post" asp-action="SearchPackages">
+    <input type="text" name="origin" placeholder="Origin" />
+    <input type="text" name="destination" placeholder="Destination" />
+    <input type="date" name="date" />
+    <button type="submit">Search Packages</button>
+</form>
+
+<hr />
+
+<form method="get" asp-action="Logout">
+    <button type="submit">Logout</button>
+</form>
