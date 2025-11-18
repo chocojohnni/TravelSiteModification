@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36616.10 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TravelSiteModification", "TravelSiteModification\TravelSiteModification.csproj", "{6F6FD243-D0CE-45B0-96A6-0529E76042C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities", "Utilities\Utilities.csproj", "{73A64E00-890E-4169-95CB-52FF6F610695}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{6F6FD243-D0CE-45B0-96A6-0529E76042C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F6FD243-D0CE-45B0-96A6-0529E76042C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F6FD243-D0CE-45B0-96A6-0529E76042C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73A64E00-890E-4169-95CB-52FF6F610695}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73A64E00-890E-4169-95CB-52FF6F610695}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73A64E00-890E-4169-95CB-52FF6F610695}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73A64E00-890E-4169-95CB-52FF6F610695}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
