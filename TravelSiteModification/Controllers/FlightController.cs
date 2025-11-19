@@ -21,7 +21,7 @@ namespace TravelSiteModification.Controllers
         [HttpGet]
         public IActionResult Book(int flightId)
         {
-            // Check login
+            // Make sure the user is logged in
             int? userIdNullable = HttpContext.Session.GetInt32("UserID");
             int userIdValue = 0;
 
@@ -52,6 +52,7 @@ namespace TravelSiteModification.Controllers
             DataRow row = ds.Tables[0].Rows[0];
 
             decimal price = 0;
+
             if (row["Price"] != DBNull.Value)
             {
                 price = Convert.ToDecimal(row["Price"]);
@@ -59,11 +60,6 @@ namespace TravelSiteModification.Controllers
 
             FlightBookingViewModel model = new FlightBookingViewModel();
             model.FlightId = flightId;
-            model.AirlineName = row["AirlineName"].ToString();
-            model.DepartureCity = row["DepartureCity"].ToString();
-            model.ArrivalCity = row["ArrivalCity"].ToString();
-            model.DepartureTime = Convert.ToDateTime(row["DepartureTime"]);
-            model.ArrivalTime = Convert.ToDateTime(row["ArrivalTime"]);
             model.Price = price;
 
             string firstName = HttpContext.Session.GetString("UserFirstName");
@@ -78,13 +74,18 @@ namespace TravelSiteModification.Controllers
                 model.Email = email;
             }
 
-            return View(model);
+            ViewBag.AirlineName = row["AirlineName"].ToString();
+            ViewBag.DepartureCity = row["DepartureCity"].ToString();
+            ViewBag.ArrivalCity = row["ArrivalCity"].ToString();
+            ViewBag.DepartureTime = Convert.ToDateTime(row["DepartureTime"]);
+            ViewBag.ArrivalTime = Convert.ToDateTime(row["ArrivalTime"]);
+
+            return View("~/Views/TravelSite/FlightBooking.cshtml", model);
         }
 
         [HttpPost]
         public IActionResult Book(FlightBookingViewModel model)
         {
-            // 1. Make sure the user is logged in
             int? userIdNullable = HttpContext.Session.GetInt32("UserID");
             int userIdValue = 0;
 
@@ -100,36 +101,35 @@ namespace TravelSiteModification.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // 2. If validation fails, reload flight details and return the view
+            SqlCommand reloadCmd = new SqlCommand();
+            reloadCmd.CommandType = CommandType.StoredProcedure;
+            reloadCmd.CommandText = "GetFlightByID";
+            reloadCmd.Parameters.AddWithValue("@FlightID", model.FlightId);
+
+            DataSet reloadDataSet = db.GetDataSetUsingCmdObj(reloadCmd);
+
+            if (reloadDataSet != null &&
+                reloadDataSet.Tables.Count > 0 &&
+                reloadDataSet.Tables[0].Rows.Count > 0)
+            {
+                DataRow row = reloadDataSet.Tables[0].Rows[0];
+
+                ViewBag.AirlineName = row["AirlineName"].ToString();
+                ViewBag.DepartureCity = row["DepartureCity"].ToString();
+                ViewBag.ArrivalCity = row["ArrivalCity"].ToString();
+                ViewBag.DepartureTime = Convert.ToDateTime(row["DepartureTime"]);
+                ViewBag.ArrivalTime = Convert.ToDateTime(row["ArrivalTime"]);
+
+                if (row["Price"] != DBNull.Value && model.Price == 0)
+                {
+                    decimal priceFromDatabase = Convert.ToDecimal(row["Price"]);
+                    model.Price = priceFromDatabase;
+                }
+            }
+
             if (ModelState.IsValid == false)
             {
-                SqlCommand reloadCmd = new SqlCommand();
-                reloadCmd.CommandType = CommandType.StoredProcedure;
-                reloadCmd.CommandText = "GetFlightByID";
-                reloadCmd.Parameters.AddWithValue("@FlightID", model.FlightId);
-
-                DataSet reloadDataSet = db.GetDataSetUsingCmdObj(reloadCmd);
-
-                if (reloadDataSet != null &&
-                    reloadDataSet.Tables.Count > 0 &&
-                    reloadDataSet.Tables[0].Rows.Count > 0)
-                {
-                    DataRow row = reloadDataSet.Tables[0].Rows[0];
-
-                    model.AirlineName = row["AirlineName"].ToString();
-                    model.DepartureCity = row["DepartureCity"].ToString();
-                    model.ArrivalCity = row["ArrivalCity"].ToString();
-                    model.DepartureTime = Convert.ToDateTime(row["DepartureTime"]);
-                    model.ArrivalTime = Convert.ToDateTime(row["ArrivalTime"]);
-
-                    if (row["Price"] != DBNull.Value && model.Price == 0)
-                    {
-                        decimal priceFromDatabase = Convert.ToDecimal(row["Price"]);
-                        model.Price = priceFromDatabase;
-                    }
-                }
-
-                return View(model);
+                return View("~/Views/TravelSite/FlightBooking.cshtml", model);
             }
 
             SqlCommand insertCmd = new SqlCommand();
@@ -151,48 +151,22 @@ namespace TravelSiteModification.Controllers
 
                 if (rowsAffected > 0)
                 {
-                    model.IsSuccess = true;
-                    model.StatusMessage = "Your flight has been booked successfully.";
+                    ViewBag.IsSuccess = true;
+                    ViewBag.StatusMessage = "Your flight has been booked successfully.";
                 }
                 else
                 {
-                    model.IsSuccess = false;
-                    model.StatusMessage = "There was a problem saving your booking. Please try again.";
+                    ViewBag.IsSuccess = false;
+                    ViewBag.StatusMessage = "There was a problem saving your booking. Please try again.";
                 }
             }
             catch (Exception ex)
             {
-                model.IsSuccess = false;
-                model.StatusMessage = "Database error while saving your booking: " + ex.Message;
+                ViewBag.IsSuccess = false;
+                ViewBag.StatusMessage = "Database error while saving your booking: " + ex.Message;
             }
 
-            SqlCommand reloadCmdAfterSave = new SqlCommand();
-            reloadCmdAfterSave.CommandType = CommandType.StoredProcedure;
-            reloadCmdAfterSave.CommandText = "GetFlightByID";
-            reloadCmdAfterSave.Parameters.AddWithValue("@FlightID", model.FlightId);
-
-            DataSet reloadDataSetAfterSave = db.GetDataSetUsingCmdObj(reloadCmdAfterSave);
-
-            if (reloadDataSetAfterSave != null &&
-                reloadDataSetAfterSave.Tables.Count > 0 &&
-                reloadDataSetAfterSave.Tables[0].Rows.Count > 0)
-            {
-                DataRow rowAfterSave = reloadDataSetAfterSave.Tables[0].Rows[0];
-
-                model.AirlineName = rowAfterSave["AirlineName"].ToString();
-                model.DepartureCity = rowAfterSave["DepartureCity"].ToString();
-                model.ArrivalCity = rowAfterSave["ArrivalCity"].ToString();
-                model.DepartureTime = Convert.ToDateTime(rowAfterSave["DepartureTime"]);
-                model.ArrivalTime = Convert.ToDateTime(rowAfterSave["ArrivalTime"]);
-
-                if (rowAfterSave["Price"] != DBNull.Value && model.Price == 0)
-                {
-                    decimal priceFromDatabaseAfterSave = Convert.ToDecimal(rowAfterSave["Price"]);
-                    model.Price = priceFromDatabaseAfterSave;
-                }
-            }
-
-            return View(model);
+            return View("~/Views/TravelSite/FlightBooking.cshtml", model);
         }
     }
 }

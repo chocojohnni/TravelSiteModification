@@ -6,10 +6,10 @@
 
 <h2>Book Your Flight</h2>
 
-@if (!string.IsNullOrEmpty(Model.StatusMessage))
+@if (!string.IsNullOrEmpty(ViewBag.StatusMessage))
 {
-    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")">
-        @Model.StatusMessage
+    <div class="alert-success">
+        @ViewBag.StatusMessage
     </div>
 }
 
@@ -21,19 +21,19 @@
             <div class="card-body">
                 <p class="mb-1">
                     <strong>Airline:</strong>
-                    @Model.AirlineName
+                    @ViewBag.AirlineName
                 </p>
                 <p class="mb-1">
                     <strong>Departure City:</strong>
-                    @Model.DepartureCity
+                    @ViewBag.DepartureCity
                 </p>
                 <p class="mb-1">
                     <strong>Arrival City:</strong>
-                    @Model.ArrivalCity
+                    @ViewBag.ArrivalCity
                 </p>
                 <p class="mb-1">
                     <strong>Departure Time:</strong>
-                    @Model.DepartureTime.ToString("MMMM dd, yyyy HH:mm")
+                    @ViewBag.DepartureTime.ToString("MMMM dd, yyyy HH:mm")
                 </p>
                 <p class="mb-1">
                     <strong>Arrival Time:</strong>

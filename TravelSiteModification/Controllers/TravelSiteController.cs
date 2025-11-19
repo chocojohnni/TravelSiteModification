@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Data;
+using System.Data.SqlClient;
+using Utilities;
 
 namespace TravelSiteModification.Controllers
 {
@@ -42,7 +45,24 @@ namespace TravelSiteModification.Controllers
             HttpContext.Session.SetString("FlightOrigin", origin);
             HttpContext.Session.SetString("FlightDestination", destination);
 
-            return RedirectToAction("Index", "Flights");
+            DBConnect db = new DBConnect();
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "GetFlightsByRoute";
+            cmd.Parameters.AddWithValue("@Origin", origin);
+            cmd.Parameters.AddWithValue("@Destination", destination);
+
+            DataSet ds = db.GetDataSetUsingCmdObj(cmd);
+
+            if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+            {
+                DataRow row = ds.Tables[0].Rows[0];
+                int flightId = Convert.ToInt32(row["FlightID"]);
+                return RedirectToAction("Book", "Flight", new { flightId = flightId });
+            }
+
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
