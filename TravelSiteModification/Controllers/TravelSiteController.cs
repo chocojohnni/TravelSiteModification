@@ -79,8 +79,32 @@ namespace TravelSiteModification.Controllers
         [HttpPost]
         public IActionResult SearchEvents(string eventLocation)
         {
+            if (string.IsNullOrEmpty(eventLocation))
+            {
+                return RedirectToAction("Index");
+            }
+
             HttpContext.Session.SetString("EventLocation", eventLocation);
-            return RedirectToAction("Index", "Events");
+
+            DBConnect db = new DBConnect();
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "GetEventsByLocation";
+            cmd.Parameters.AddWithValue("@LocationCode", eventLocation);
+
+            DataSet ds = db.GetDataSetUsingCmdObj(cmd);
+
+            if (ds != null &&
+                ds.Tables.Count > 0 &&
+                ds.Tables[0].Rows.Count > 0)
+            {
+                DataRow row = ds.Tables[0].Rows[0];
+                int eventId = Convert.ToInt32(row["EventID"]);
+                return RedirectToAction("Book", "Event", new { eventId = eventId });
+            }
+
+            return RedirectToAction("Index");
         }
 
         [HttpPost]

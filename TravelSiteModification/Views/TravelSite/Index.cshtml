@@ -17,8 +17,8 @@
 <h3>Search Hotels</h3>
 <form method="post" asp-action="SearchHotels">
     <select name="destination">
-        <option value="NYC">New York</option>
-        <option value="LAX">Los Angeles</option>
+        <option value="New York">New York</option>
+        <option value="Los Angeles">Los Angeles</option>
     </select>
     <input type="date" name="checkInDate" />
     <input type="date" name="checkOutDate" />
@@ -45,10 +45,10 @@
 <h3>Search Cars</h3>
 <form method="post" asp-action="SearchCars">
     <select name="pickupLocation">
-        <option value="SEA">Seattle</option>
+        <option value="Seattle">Seattle</option>
     </select>
     <select name="dropoffLocation">
-        <option value="LAX">Los Angeles</option>
+        <option value="Los Angeles">Los Angeles</option>
     </select>
     <input type="date" name="pickupDate" />
     <input type="date" name="dropoffDate" />
@@ -59,9 +59,7 @@
 
 <h3>Search Events</h3>
 <form method="post" asp-action="SearchEvents">
-    <select name="eventLocation">
-        <option value="NYC">New York</option>
-    </select>
+    <input type="text" name="eventLocation" placeholder="City or attraction code" />
     <button type="submit">Search Events</button>
 </form>
 
