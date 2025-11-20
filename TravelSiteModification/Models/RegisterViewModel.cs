@@ -11,6 +11,8 @@ namespace TravelSiteModification.Models
         private string message;
 
         [Required]
+        [RegularExpression(@"^[A-Za-z'-]{2,30}$",
+            ErrorMessage = "First name must be 2–30 letters and contain only letters, hyphens, or apostrophes.")]
         public string FirstName
         {
             get { return firstName; }
@@ -18,13 +20,17 @@ namespace TravelSiteModification.Models
         }
 
         [Required]
+        [RegularExpression(@"^[A-Za-z'-]{2,30}$",
+            ErrorMessage = "Last name must be 2–30 letters and contain only letters, hyphens, or apostrophes.")]
+
         public string LastName
         {
             get { return lastName; }
             set { lastName = value; }
         }
 
-        [Required, EmailAddress]
+        [Required]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
         public string Email
         {
             get { return email; }
@@ -32,6 +38,10 @@ namespace TravelSiteModification.Models
         }
 
         [Required]
+        [StringLength(100, MinimumLength = 6,
+            ErrorMessage = "Password must be at least 6 characters.")]
+        [RegularExpression(@"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{6,}$",
+            ErrorMessage = "Password must contain upper, lower, number, and at least 6 characters.")]
         public string Password
         {
             get { return password; }
