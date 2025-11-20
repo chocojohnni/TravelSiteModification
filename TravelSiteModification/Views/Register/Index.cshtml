@@ -1,0 +1,21 @@
+﻿@model TravelSiteModification.Models.RegisterViewModel
+
+<h2>Create Your Account</h2>
+
+<form method="post" asp-action="Index">
+    <label>First Name</label>
+    <input asp-for="FirstName" class="form-control" />
+
+    <label>Last Name</label>
+    <input asp-for="LastName" class="form-control" />
+
+    <label>Email</label>
+    <input asp-for="Email" class="form-control" type="email" />
+
+    <label>Password</label>
+    <input asp-for="Password" class="form-control" type="password" />
+
+    <button type="submit" class="btn btn-primary">Continue</button>
+
+    <p style="color:red">@Model.Message</p>
+</form>
