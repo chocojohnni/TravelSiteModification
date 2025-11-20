@@ -5,9 +5,6 @@ namespace TravelSiteModification.Models
     public class FlightBookingViewModel
     {
         private int flightId;
-        private string airlineName;
-        private string departureCity;
-        private string arrivalCity;
         private DateTime departureTime;
         private DateTime arrivalTime;
         private decimal price;
@@ -19,7 +16,6 @@ namespace TravelSiteModification.Models
         private string expiryDate;
         private string cvv;
 
-        private string statusMessage;
         private bool isSuccess;
 
         // Flight info
@@ -27,24 +23,6 @@ namespace TravelSiteModification.Models
         {
             get { return flightId; }
             set { flightId = value; }
-        }
-
-        public string AirlineName
-        {
-            get { return airlineName; }
-            set { airlineName = value; }
-        }
-
-        public string DepartureCity
-        {
-            get { return departureCity; }
-            set { departureCity = value; }
-        }
-
-        public string ArrivalCity
-        {
-            get { return arrivalCity; }
-            set { arrivalCity = value; }
         }
 
         public DateTime DepartureTime
@@ -117,12 +95,6 @@ namespace TravelSiteModification.Models
         {
             get { return cvv; }
             set { cvv = value; }
-        }
-
-        public string StatusMessage
-        {
-            get { return statusMessage; }
-            set { statusMessage = value; }
         }
 
         public bool IsSuccess
