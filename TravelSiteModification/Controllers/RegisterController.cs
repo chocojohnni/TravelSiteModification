@@ -18,7 +18,7 @@ namespace TravelSiteModification.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            return View(new RegisterViewModel());
         }
 
         [HttpPost]

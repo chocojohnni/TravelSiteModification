@@ -1,4 +1,4 @@
-namespace NewProject.Models
+namespace TravelSiteModification.Models
 {
     public class ErrorViewModel
     {

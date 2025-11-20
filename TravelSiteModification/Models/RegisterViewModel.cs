@@ -8,6 +8,8 @@ namespace TravelSiteModification.Models
         private string lastName;
         private string email;
         private string password;
+        private bool isActive;
+        private DateTime dateCreated;
         private string message;
 
         [Required]
@@ -46,6 +48,18 @@ namespace TravelSiteModification.Models
         {
             get { return password; }
             set { password = value; }
+        }
+
+        public bool IsActive
+        {
+            get { return isActive; }
+            set { isActive = value; }
+        }
+
+        public DateTime DateCreated
+        {
+            get { return dateCreated; }
+            set { dateCreated = value; }
         }
 
         public string Message
