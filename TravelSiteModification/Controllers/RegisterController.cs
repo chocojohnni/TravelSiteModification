@@ -38,7 +38,6 @@ namespace TravelSiteModification.Controllers
 
             if (ds.Tables[0].Rows.Count > 0)
             {
-                model.Message = "An account with this email already exists.";
                 return View(model);
             }
 
@@ -65,12 +64,11 @@ namespace TravelSiteModification.Controllers
             }
             else
             {
-                model.Message = "Account creation failed. Please refresh the page and try again.";
                 return View(model);
             }
 
-                // Save session
-                HttpContext.Session.SetString("UserFirstName", model.FirstName);
+            // Save session
+            HttpContext.Session.SetString("UserFirstName", model.FirstName);
             HttpContext.Session.SetString("UserEmail", model.Email);
             HttpContext.Session.SetInt32("UserID", userID);
 
