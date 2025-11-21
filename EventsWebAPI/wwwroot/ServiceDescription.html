@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Events Web API - Service Description</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            line-height: 1.5;
+        }
+
+        h1, h2 {
+            color: #2c3e50;
+        }
+
+        code {
+            background: #f6f8fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        pre {
+            background: #f6f8fa;
+            padding: 1em;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Events Web API</h1>
+    <p>This API provides event discovery and booking features for partner travel sites.</p>
+    <p>Base URL: <code>https://cis-iis2.temple.edu/Fall2025/3342_tup84792/WebAPI/</code></p>
+
+    <h2>Endpoints</h2>
+    <ul>
+        <li><strong>GET</strong> <code>/api/event/agencies?city=&amp;state=</code></li>
+        <li><strong>GET</strong> <code>/api/event/activities?city=&amp;state=</code></li>
+        <li><strong>GET</strong> <code>/api/event/find?city=&amp;state=&amp;fromDate=&amp;toDate=&amp;minPrice=&amp;maxPrice=&amp;keyword=</code></li>
+        <li><strong>GET</strong> <code>/api/event/findbyvenue?venueId=&amp;city=&amp;state=&amp;fromDate=&amp;toDate=</code></li>
+        <li><strong>POST</strong> <code>/api/event/reserve</code></li>
+        <li><strong>POST</strong> <code>/api/token/create</code></li>
+    </ul>
+
+    <h2>Return Fields</h2>
+    <p>Typical DataSet columns returned:</p>
+    <ul>
+        <li><code>AgencyId</code>, <code>AgencyName</code>, <code>Phone</code>, <code>Email</code></li>
+        <li><code>EventId</code>, <code>EventName</code>, <code>EventDateTime</code>, <code>Description</code></li>
+        <li><code>VenueId</code>, <code>VenueName</code>, <code>Price</code>, <code>SeatsAvailable</code></li>
+    </ul>
+
+    <h2>Reserve Endpoint Example</h2>
+    <pre>{
+  "EventOfferingId": 42,
+  "Qty": 2,
+  "CustomerName": "Honz Tarriela",
+  "CustomerEmail": "HonzTarriela@example.com",
+  "TravelSiteId": "TravelSite",
+  "Token": "String"
+}</pre>
+
+    <h2>Response Example</h2>
+    <pre>{ "ReservationId": 123 }</pre>
+</body>
+</html>
