@@ -16,6 +16,7 @@ namespace TravelSiteModification.Controllers
             db = new DBConnect();
         }
 
+        [HttpGet]
         public IActionResult Index()
         {
             return View(new RegisterViewModel());
@@ -56,6 +57,12 @@ namespace TravelSiteModification.Controllers
             add.Parameters.AddWithValue("@DateCreated", DateTime.Now);
 
             DataSet userDs = db.GetDataSetUsingCmdObj(add);
+
+            if (userDs.Tables.Count == 0 || userDs.Tables[0].Rows.Count == 0)
+            {
+                model.Message = "User cannot be created";
+                return View(model);
+            }
 
             int userID = Convert.ToInt32(userDs.Tables[0].Rows[0]["UserID"]);
 

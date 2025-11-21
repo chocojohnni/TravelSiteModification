@@ -16,6 +16,7 @@ namespace TravelSiteModification.Controllers
         {
             db = new DBConnect();
         }
+
         // GET: /Account/Login
         public IActionResult Login()
         {
