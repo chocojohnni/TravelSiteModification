@@ -8,6 +8,8 @@ namespace TravelSiteModification.Models
         private string lastName;
         private string email;
         private string password;
+        private bool isActive;
+        private DateTime dateCreated;
         private string message;
 
         [Required]
@@ -38,14 +40,22 @@ namespace TravelSiteModification.Models
         }
 
         [Required]
-        [StringLength(100, MinimumLength = 6,
-            ErrorMessage = "Password must be at least 6 characters.")]
-        [RegularExpression(@"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{6,}$",
-            ErrorMessage = "Password must contain upper, lower, number, and at least 6 characters.")]
         public string Password
         {
             get { return password; }
             set { password = value; }
+        }
+
+        public bool IsActive
+        {
+            get { return isActive; }
+            set { isActive = value; }
+        }
+
+        public DateTime DateCreated
+        {
+            get { return dateCreated; }
+            set { dateCreated = value; }
         }
 
         public string Message
