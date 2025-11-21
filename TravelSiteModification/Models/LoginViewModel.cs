@@ -16,8 +16,6 @@ namespace TravelSiteModification.Models
         }
 
         [Required]
-        [RegularExpression(@"^(?=.*[A-Z])(?=.*\d).{8,}$",
-            ErrorMessage = "Password must be at least 8 characters long, include one uppercase letter and one number.")]
         public string Password
         {
             get { return password; }
