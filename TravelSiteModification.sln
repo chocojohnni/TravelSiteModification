@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36616.10 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TravelSiteModification", "TravelSiteModification\TravelSiteModification.csproj", "{6F6FD243-D0CE-45B0-96A6-0529E76042C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TravelSiteModification", "TravelSiteModification\TravelSiteModification.csproj", "{6F6FD243-D0CE-45B0-96A6-0529E76042C4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities", "Utilities\Utilities.csproj", "{73A64E00-890E-4169-95CB-52FF6F610695}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventsWebAPI", "EventsWebAPI\EventsWebAPI.csproj", "{BA052198-1BEB-4B0D-9B4E-408A5F169883}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{73A64E00-890E-4169-95CB-52FF6F610695}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73A64E00-890E-4169-95CB-52FF6F610695}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73A64E00-890E-4169-95CB-52FF6F610695}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA052198-1BEB-4B0D-9B4E-408A5F169883}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA052198-1BEB-4B0D-9B4E-408A5F169883}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA052198-1BEB-4B0D-9B4E-408A5F169883}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA052198-1BEB-4B0D-9B4E-408A5F169883}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
