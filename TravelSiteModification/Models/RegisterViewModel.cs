@@ -10,7 +10,6 @@ namespace TravelSiteModification.Models
         private string password;
         private bool isActive;
         private DateTime dateCreated;
-        private string message;
 
         [Required]
         [RegularExpression(@"^[A-Za-z'-]{2,30}$",
@@ -56,12 +55,6 @@ namespace TravelSiteModification.Models
         {
             get { return dateCreated; }
             set { dateCreated = value; }
-        }
-
-        public string Message
-        {
-            get { return message; }
-            set { message = value; }
         }
     }
 }

@@ -2,7 +2,7 @@
 
 <h2>Create Your Account</h2>
 
-<form method="post" asp-action="Index">
+<form method="post" asp-action="Register" asp-contrller="Register">
     <label>First Name</label>
     <input asp-for="FirstName" class="form-control" />
 
@@ -17,5 +17,5 @@
 
     <button type="submit" class="btn btn-primary">Continue</button>
 
-    <p style="color:red">@Model.Message</p>
+    <div asp-validation-summary="All" class="text-danger"></div>
 </form>
