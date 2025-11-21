@@ -17,34 +17,32 @@ namespace TravelSiteModification.Controllers
         }
 
         [HttpGet]
-        public IActionResult Index()
+        public IActionResult Register()
         {
             return View(new RegisterViewModel());
         }
 
         [HttpPost]
-        public IActionResult Index(RegisterViewModel model)
+        public IActionResult Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
-            // Check if email already exists
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandText = "CheckUserEmail";
-            cmd.Parameters.AddWithValue("@Email", model.Email);
+            // Check if email exists
+            SqlCommand check = new SqlCommand();
+            check.CommandType = CommandType.StoredProcedure;
+            check.CommandText = "CheckUserEmail";
+            check.Parameters.AddWithValue("@Email", model.Email);
 
-            DataSet ds = db.GetDataSetUsingCmdObj(cmd);
+            DataSet ds = db.GetDataSetUsingCmdObj(check);
 
             if (ds.Tables[0].Rows.Count > 0)
             {
-                model.Message = "An account with this email is already registered.";
+                model.Message = "An account with this email already exists.";
                 return View(model);
             }
 
-            // Insert new user
+            // Insert User
             SqlCommand add = new SqlCommand();
             add.CommandType = CommandType.StoredProcedure;
             add.CommandText = "AddUser";
@@ -56,17 +54,23 @@ namespace TravelSiteModification.Controllers
             add.Parameters.AddWithValue("@IsActive", true);
             add.Parameters.AddWithValue("@DateCreated", DateTime.Now);
 
-            DataSet userDs = db.GetDataSetUsingCmdObj(add);
+            // Run the INSERT
+            DataSet dsUser = db.GetDataSetUsingCmdObj(add);
 
-            if (userDs.Tables.Count == 0 || userDs.Tables[0].Rows.Count == 0)
+            int userID = 0;
+
+            if (dsUser.Tables.Count > 0 && dsUser.Tables[0].Rows.Count > 0)
             {
-                model.Message = "User cannot be created";
+                userID = Convert.ToInt32(dsUser.Tables[0].Rows[0]["UserID"]);
+            }
+            else
+            {
+                model.Message = "Account creation failed. Please refresh the page and try again.";
                 return View(model);
             }
 
-            int userID = Convert.ToInt32(userDs.Tables[0].Rows[0]["UserID"]);
-
-            HttpContext.Session.SetString("UserFirstName", model.FirstName);
+                // Save session
+                HttpContext.Session.SetString("UserFirstName", model.FirstName);
             HttpContext.Session.SetString("UserEmail", model.Email);
             HttpContext.Session.SetInt32("UserID", userID);
 
