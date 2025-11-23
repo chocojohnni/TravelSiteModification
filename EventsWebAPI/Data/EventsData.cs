@@ -15,7 +15,7 @@ namespace EventsWebAPI.Data
 
         public DataSet GetActivityAgencies(string city, string state)
         {
-            SqlCommand cmd = new SqlCommand("dbo.spEvents_GetActivityAgencies");
+            SqlCommand cmd = new SqlCommand("dbo.TP_spEvents_GetActivityAgencies");
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@City", city);
             cmd.Parameters.AddWithValue("@State", state);
@@ -24,7 +24,7 @@ namespace EventsWebAPI.Data
 
         public DataSet GetActivities(string city, string state)
         {
-            SqlCommand cmd = new SqlCommand("dbo.spEvents_GetActivities");
+            SqlCommand cmd = new SqlCommand("dbo.TP_spEvents_GetActivities");
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@City", city);
             cmd.Parameters.AddWithValue("@State", state);
@@ -33,7 +33,7 @@ namespace EventsWebAPI.Data
 
         public DataSet FindActivities(string city, string state, DateTime? fromDate, DateTime? toDate, decimal? minPrice, decimal? maxPrice, string keyword)
         {
-            SqlCommand cmd = new SqlCommand("dbo.spEvents_FindActivities");
+            SqlCommand cmd = new SqlCommand("dbo.TP_spEvents_FindActivities");
             cmd.CommandType = CommandType.StoredProcedure;
 
             if (city == null)
@@ -107,7 +107,7 @@ namespace EventsWebAPI.Data
 
         public DataSet FindActivitiesByVenue(int venueId, string city, string state, DateTime? fromDate, DateTime? toDate)
         {
-            SqlCommand cmd = new SqlCommand("dbo.spFindActivitiesByVenue");
+            SqlCommand cmd = new SqlCommand("dbo.TP_spFindActivitiesByVenue");
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@VenueId", venueId);
             cmd.Parameters.AddWithValue("@City", city);
