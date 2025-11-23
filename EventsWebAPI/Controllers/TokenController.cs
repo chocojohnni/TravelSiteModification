@@ -12,7 +12,7 @@ namespace EventsWebAPI.Controllers
     /// </summary>
     /// <remarks>
     /// This controller provides an endpoint to create or retrieve a token for a partner site.
-    /// It maps to the stored procedure <c>spCreateToken</c>, which returns a single-row result
+    /// It maps to the stored procedure <c>TP_spCreateToken</c>, which returns a single-row result
     /// containing the following columns:
     /// <list type="bullet">
     /// <item><description><c>TravelSiteID</c> — The unique identifier for the partner site.</description></item>
