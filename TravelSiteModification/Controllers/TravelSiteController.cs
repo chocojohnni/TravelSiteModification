@@ -31,7 +31,7 @@ namespace TravelSiteModification.Controllers
             HttpContext.Session.SetString("CheckInDate", checkInDate);
             HttpContext.Session.SetString("CheckOutDate", checkOutDate);
 
-            return RedirectToAction("Index", "Hotels");
+            return RedirectToAction("Index", "Hotel");
         }
 
         [HttpPost]
@@ -62,7 +62,7 @@ namespace TravelSiteModification.Controllers
                 return RedirectToAction("Book", "Flight", new { flightId = flightId });
             }
 
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", "Flight");
         }
 
         [HttpPost]
@@ -73,7 +73,7 @@ namespace TravelSiteModification.Controllers
             HttpContext.Session.SetString("CarPickupDate", pickupDate);
             HttpContext.Session.SetString("CarDropoffDate", dropoffDate);
 
-            return RedirectToAction("Index", "Cars");
+            return RedirectToAction("Index", "Car");
         }
 
         [HttpPost]
@@ -104,7 +104,7 @@ namespace TravelSiteModification.Controllers
                 return RedirectToAction("Book", "Event", new { eventId = eventId });
             }
 
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", "Event");
         }
 
         [HttpPost]

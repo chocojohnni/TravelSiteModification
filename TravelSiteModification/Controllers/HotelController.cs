@@ -70,7 +70,7 @@ namespace TravelSiteModification.Controllers
             return View(vm);
         }
 
-        // POST: Hotels/ChangeDestination
+        // POST: Hotel/ChangeDestination
         [HttpPost]
         public IActionResult ChangeDestination(string newDestination, string checkInDate, string checkOutDate)
         {
@@ -87,7 +87,7 @@ namespace TravelSiteModification.Controllers
             return RedirectToAction("Index");
         }
 
-        // GET: Hotels/Details/5
+        // GET: Hotel/Details/5
         public IActionResult Details(int id)
         {
             var hotel = new HotelViewModel();
@@ -161,18 +161,18 @@ namespace TravelSiteModification.Controllers
             return View(hotel);
         }
 
-        // POST: Hotels/SelectRoom
-        [HttpPost]
-        public IActionResult SelectRoom(int roomId, string checkInDate, string checkOutDate)
-        {
-            // store selected room and dates and redirect to booking page
-            HttpContext.Session.SetInt32("SelectedRoomID", roomId);
-            HttpContext.Session.SetString("CheckInDate", checkInDate);
-            HttpContext.Session.SetString("CheckOutDate", checkOutDate);
+        // POST: Hotel/SelectRoom
+        //[HttpPost]
+        //public IActionResult SelectRoom(int roomId, string checkInDate, string checkOutDate)
+        //{
+        //    // store selected room and dates and redirect to booking page
+        //    HttpContext.Session.SetInt32("SelectedRoomID", roomId);
+        //    HttpContext.Session.SetString("CheckInDate", checkInDate);
+        //    HttpContext.Session.SetString("CheckOutDate", checkOutDate);
 
-            // Redirect to HotelBooking controller
-            return RedirectToAction("Index", "HotelBooking");
-        }
+        //    // Redirect to HotelBooking controller
+        //    return RedirectToAction("Index", "HotelBooking");
+        //}
 
         public IActionResult Logout()
         {
