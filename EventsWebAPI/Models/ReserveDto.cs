@@ -18,7 +18,7 @@
         private int qty;
         private string customerName;
         private string customerEmail;
-        private string travelSiteId;
+        private int travelSiteId;
         private string token;
 
         public ReserveDto() { 
@@ -78,7 +78,7 @@
         /// and must match a record in the ApiClients table.
         /// </remarks>
         /// <example>TravelSite</example>
-        public string TravelSiteId
+        public int TravelSiteId
         {
             get { return travelSiteId; }
             set { travelSiteId = value; }
