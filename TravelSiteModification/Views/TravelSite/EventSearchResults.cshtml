@@ -1,0 +1,50 @@
+﻿@model List<TravelSiteModification.Models.EventActivity>
+
+@{
+    ViewData["Title"] = "Event Search Results";
+}
+
+<h2>Event Search Results</h2>
+
+@if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+{
+    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+}
+
+@if (Model == null || !Model.Any())
+{
+    <p>No events found for your search.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Event</th>
+                <th>City</th>
+                <th>Date</th>
+                <th>Price</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var e in Model)
+            {
+                <tr>
+                    <td>@e.EventName</td>
+                    <td>@e.City</td>
+                    <td>@e.EventDate.ToShortDateString()</td>
+                    <td>@e.TicketPrice.ToString("C")</td>
+                    <td>
+                        <a asp-controller="Event"
+                           asp-action="Book"
+                           asp-route-eventId="@e.EventId"
+                           class="btn btn-sm btn-primary">
+                            Book
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
