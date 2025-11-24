@@ -1,8 +1,19 @@
+using TravelSiteModification.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddSession();
+
+builder.Services.AddHttpClient<EventsAPIClient>(client =>
+{
+    var baseUrl = builder.Configuration["EventsApi:BaseUrl"];
+    if (!string.IsNullOrEmpty(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+});
 
 var app = builder.Build();
 

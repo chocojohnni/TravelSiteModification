@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Data.SqlClient;
+using TravelSiteModification.Services;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using TravelSiteModification.Models;
 using Utilities;
 
@@ -15,9 +18,43 @@ namespace TravelSiteModification.Controllers
 
         private readonly DBConnect db;
 
-        public EventController()
+        //public EventController()
+        //{
+        //    db = new DBConnect();
+        //}
+
+        private readonly EventsAPIClient eventsApiClient;
+
+        public EventController(EventsAPIClient client)
         {
             db = new DBConnect();
+            eventsApiClient = client;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SearchEvents(string city, string state)
+        {
+            if (string.IsNullOrWhiteSpace(city) || string.IsNullOrWhiteSpace(state))
+            {
+                // Invalid input goes back to home
+                return RedirectToAction("Index", "TravelSite");
+            }
+
+            try
+            {
+                List<EventActivity> events =
+                    await eventsApiClient.GetActivitiesAsync(city.Trim(), state.Trim());
+                return View("~/Views/TravelSite/EventSearchResults.cshtml", events);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error calling Events API: " + ex.Message;
+
+                return View(
+                    "~/Views/TravelSite/EventSearchResults.cshtml",
+                    new List<EventActivity>()
+                );
+            }
         }
 
         [HttpGet]

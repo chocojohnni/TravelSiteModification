@@ -68,8 +68,41 @@ namespace EventsWebAPI.Controllers
             try
             {
                 DataSet ds = eventsData.GetActivities(city, state);
-                string xml = ds.GetXml();
-                return Content(xml, "application/xml");
+
+                if (ds == null || ds.Tables.Count == 0)
+                {
+                    return Ok(new List<EventActivity>());
+                }
+
+                DataTable table = ds.Tables[0];
+
+                List<EventActivity> list = new List<EventActivity>();
+
+                foreach (DataRow row in table.Rows)
+                {
+                    EventActivity dto = new EventActivity();
+
+                    dto.EventId = Convert.ToInt32(row["EventID"]);
+                    dto.EventName = row["EventName"].ToString();
+                    dto.City = row["City"].ToString();
+
+                    if (row["EventDate"] != DBNull.Value)
+                    {
+                        dto.EventDate = Convert.ToDateTime(row["EventDate"]);
+                    }
+
+                    if (row["TicketPrice"] != DBNull.Value)
+                    {
+                        dto.TicketPrice = Convert.ToDecimal(row["TicketPrice"]);
+                    }
+
+                    dto.Description = row["Description"].ToString();
+                    dto.ImagePath = row["ImagePath"].ToString();
+
+                    list.Add(dto);
+                }
+
+                return Ok(list);
             }
             catch (Exception ex)
             {
