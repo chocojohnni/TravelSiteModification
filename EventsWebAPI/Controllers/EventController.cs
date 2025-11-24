@@ -155,8 +155,8 @@ namespace EventsWebAPI.Controllers
         /// <para><b>500</b> if the reservation fails or a server error occurs.</para>
         /// </returns>
         /// <remarks>
-        /// Requires a valid <c>TravelSiteId</c> and <c>Token</c> that match an active record in <c>ApiClients</c>.
-        /// Maps to stored procedure <c>spEvents_Reserve</c>.
+        /// Requires a valid TravelSiteId and Token that match an active record in TP_TravelSites.
+        /// Maps to stored procedure <c>TP_EventsReserve</c>.
         /// </remarks>
         /// <response code="200">Reservation created successfully; returns ReservationId.</response>
         /// <response code="400">Bad request (e.g., missing or invalid body).</response>

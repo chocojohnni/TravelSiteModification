@@ -138,9 +138,9 @@ namespace EventsWebAPI.Data
             return db.GetDataSetUsingCmdObj(cmd);
         }
 
-        public int Reserve(int eventOfferingId, int qty, string customerName, string customerEmail, string travelSiteId, string token)
+        public int Reserve(int eventOfferingId, int qty, string customerName, string customerEmail, int travelSiteId, string travelSiteApiToken)
         {
-            SqlCommand cmd = new SqlCommand("dbo.spEventsReserve");
+            SqlCommand cmd = new SqlCommand("dbo.TP_spEventsReserve");
             cmd.CommandType = CommandType.StoredProcedure;
 
             cmd.Parameters.AddWithValue("@EventOfferingId", eventOfferingId);
@@ -148,12 +148,12 @@ namespace EventsWebAPI.Data
             cmd.Parameters.AddWithValue("@CustomerName", customerName);
             cmd.Parameters.AddWithValue("@CustomerEmail", customerEmail);
             cmd.Parameters.AddWithValue("@TravelSiteId", travelSiteId);
-            cmd.Parameters.AddWithValue("@TravelSiteApiToken", token);
+            cmd.Parameters.AddWithValue("@TravelSiteApiToken", travelSiteApiToken);
 
             object result = db.ExecuteScalarFunction(cmd);
-            int reservationId = 0;
 
-            if (result != null)
+            int reservationId = 0;
+            if (result != null && int.TryParse(result.ToString(), out reservationId))
             {
                 return reservationId;
             }
