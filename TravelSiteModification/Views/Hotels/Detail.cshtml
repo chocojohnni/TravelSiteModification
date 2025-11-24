@@ -1,5 +1,66 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model TravelSiteModification.Models.HotelViewModel
 @{
+    ViewData["Title"] = Model.Name;
+    var rooms = ViewBag.Rooms as List<TravelSiteModification.Models.RoomViewModel>;
+    var checkIn = ViewBag.CheckInDate as string;
+    var checkOut = ViewBag.CheckOutDate as string;
 }
+
+<h2>@Model.Name</h2>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        @if (!string.IsNullOrEmpty(Model.ImagePath))
+        {
+            <img src="@Model.ImagePath" class="img-fluid" alt="@Model.Name" />
+        }
+    </div>
+    <div class="col-md-8">
+        <p><strong>Address:</strong> @Model.Address</p>
+        <p><strong>Phone:</strong> @Model.Phone</p>
+        <p><strong>Email:</strong> @Model.Email</p>
+        <p>@Model.Description</p>
+    </div>
+</div>
+
+<h4>Available Rooms</h4>
+
+@if (rooms == null || rooms.Count == 0)
+{
+    <div class="alert alert-info">No rooms available for this hotel.</div>
+}
+else
+{
+    <form asp-action="SelectRoom" method="post">
+        <input type="hidden" name="checkInDate" value="@checkIn" />
+        <input type="hidden" name="checkOutDate" value="@checkOut" />
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Room</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Occupancy</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in rooms)
+                {
+                    <tr>
+                        <td>@r.RoomName</td>
+                        <td>@r.Description</td>
+                        <td>@r.Price.ToString("C")</td>
+                        <td>@r.MaxOccupancy</td>
+                        <td>
+                            <button type="submit" name="roomId" value="@r.Id" class="btn btn-success btn-sm">Select</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </form>
+}
+
+<a asp-action="Index" class="btn btn-secondary">Back to Results</a>
