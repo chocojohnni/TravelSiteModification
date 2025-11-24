@@ -37,5 +37,10 @@
             get { return hotels; }
             set { hotels = value; }
         }
+
+        public HotelIndexViewModel()
+        {
+            hotels = new List<HotelViewModel>();
+        }
     }
 }
