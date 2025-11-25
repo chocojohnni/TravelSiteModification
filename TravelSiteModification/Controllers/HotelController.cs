@@ -99,7 +99,7 @@ namespace TravelSiteModification.Controllers
                 // Hotel details
                 SqlCommand cmd = new SqlCommand();
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = "GetHotelsByID";
+                cmd.CommandText = "GetHotelsByIDRefined";
                 cmd.Parameters.AddWithValue("@HotelID", id);
 
                 DataSet ds = db.GetDataSetUsingCmdObj(cmd);
