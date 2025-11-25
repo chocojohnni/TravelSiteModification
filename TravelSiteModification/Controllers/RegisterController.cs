@@ -3,6 +3,7 @@ using TravelSiteModification.Models;
 using System.Data;
 using System.Data.SqlClient;
 using Utilities;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace TravelSiteModification.Controllers
 {
@@ -19,16 +20,22 @@ namespace TravelSiteModification.Controllers
         [HttpGet]
         public IActionResult Register()
         {
-            return View(new RegisterViewModel());
+            RegisterViewModel model = new RegisterViewModel();
+            LoadSecurityQuestions(model);
+            return View(model);
         }
 
         [HttpPost]
         public IActionResult Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
+            {
+                // Must reload the dropdowns if we return the form
+                LoadSecurityQuestions(model);
                 return View(model);
+            }
 
-            // Check if email exists
+            // Check if email already exists
             SqlCommand check = new SqlCommand();
             check.CommandType = CommandType.StoredProcedure;
             check.CommandText = "CheckUserEmail";
@@ -38,10 +45,12 @@ namespace TravelSiteModification.Controllers
 
             if (ds.Tables[0].Rows.Count > 0)
             {
+                ModelState.AddModelError("Email", "An account with this email already exists.");
+                LoadSecurityQuestions(model);
                 return View(model);
             }
 
-            // Insert User
+            // Insert the user into the Users table
             SqlCommand add = new SqlCommand();
             add.CommandType = CommandType.StoredProcedure;
             add.CommandText = "AddUser";
@@ -53,7 +62,6 @@ namespace TravelSiteModification.Controllers
             add.Parameters.AddWithValue("@IsActive", true);
             add.Parameters.AddWithValue("@DateCreated", DateTime.Now);
 
-            // Run the INSERT
             DataSet dsUser = db.GetDataSetUsingCmdObj(add);
 
             int userID = 0;
@@ -64,15 +72,62 @@ namespace TravelSiteModification.Controllers
             }
             else
             {
+                ModelState.AddModelError("", "There was a problem creating your account. Please try again.");
+                LoadSecurityQuestions(model);
                 return View(model);
             }
 
-            // Save session
+            // Insert the user's security questions and answers
+            SqlCommand addQuestions = new SqlCommand();
+            addQuestions.CommandType = CommandType.StoredProcedure;
+            addQuestions.CommandText = "TP_AddUserSecurityQuestions";
+
+            addQuestions.Parameters.AddWithValue("@UserID", userID);
+            addQuestions.Parameters.AddWithValue("@Question1ID", model.Question1Id);
+            addQuestions.Parameters.AddWithValue("@Answer1", model.Answer1);
+            addQuestions.Parameters.AddWithValue("@Question2ID", model.Question2Id);
+            addQuestions.Parameters.AddWithValue("@Answer2", model.Answer2);
+            addQuestions.Parameters.AddWithValue("@Question3ID", model.Question3Id);
+            addQuestions.Parameters.AddWithValue("@Answer3", model.Answer3);
+
+            int rowsAffected = db.DoUpdateUsingCmdObj(addQuestions);
+
+            if (rowsAffected < 3)
+            {
+                ModelState.AddModelError("", "There was a problem saving your security questions. Please try again.");
+
+                // Reload
+                LoadSecurityQuestions(model);
+                return View(model);
+            }
+
             HttpContext.Session.SetString("UserFirstName", model.FirstName);
             HttpContext.Session.SetString("UserEmail", model.Email);
             HttpContext.Session.SetInt32("UserID", userID);
 
             return RedirectToAction("Index", "TravelSite");
+        }
+
+        private void LoadSecurityQuestions(RegisterViewModel model)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "TP_GetSecurityQuestions";
+
+            DataSet ds = db.GetDataSetUsingCmdObj(cmd);
+
+            model.SecurityQuestions = new List<SelectListItem>();
+
+            if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+            {
+                foreach (DataRow row in ds.Tables[0].Rows)
+                {
+                    SelectListItem item = new SelectListItem();
+                    item.Value = row["QuestionID"].ToString();
+                    item.Text = row["QuestionText"].ToString();
+                    model.SecurityQuestions.Add(item);
+                }
+            }
         }
     }
 }
