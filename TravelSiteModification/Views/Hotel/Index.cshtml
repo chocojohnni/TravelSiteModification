@@ -1,0 +1,79 @@
+﻿@model TravelSiteModification.Models.HotelIndexViewModel
+@{
+    ViewData["Title"] = "Hotels";
+}
+
+<h2>Hotels</h2>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="mb-2">@Html.Raw(Model.Message)</div>
+}
+
+@if (TempData["DestinationError"] != null)
+{
+    <div class="text-danger mb-2">@TempData["DestinationError"]</div>
+}
+
+<form asp-action="ChangeDestination" method="post" class="mb-3 row g-2">
+    <div class="col-auto">
+        <label class="form-label">Destination</label>
+        <select name="newDestination" class="form-select">
+            <option value="">-- Select --</option>
+            <option value="Philadelphia">Philadelphia</option>
+            <option value="New York">New York</option>
+            <option value="Los Angeles">Los Angeles</option>
+            <option value="Seattle">Seattle</option>
+            <option value="Miami">Miami</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Check-in</label>
+        <input type="date" name="checkInDate" class="form-control" value="@Model.CheckInDate" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Check-out</label>
+        <input type="date" name="checkOutDate" class="form-control" value="@Model.CheckOutDate" />
+    </div>
+    <div class="col-auto align-self-end">
+        <button class="btn btn-primary">Change Destination</button>
+    </div>
+</form>
+
+@if (Model.Hotels == null || Model.Hotels.Count == 0)
+{
+    <div class="alert alert-info">No hotels to show.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Hotel</th>
+                <th>Address</th>
+                <th>Phone</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var h in Model.Hotels)
+            {
+                <tr>
+                    <td>
+                        @if (!string.IsNullOrEmpty(h.ImagePath))
+                        {
+                            <img src="@h.ImagePath" alt="@h.Name" style="width:100px;height:auto" />
+                        }
+                    </td>
+                    <td>@h.Name</td>
+                    <td>@h.Address</td>
+                    <td>@h.Phone</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@h.Id" class="btn btn-sm btn-outline-primary">View Rooms</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
