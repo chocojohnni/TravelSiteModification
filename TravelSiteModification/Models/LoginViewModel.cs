@@ -18,5 +18,11 @@ namespace TravelSiteModification.Models
             get { return password; }
             set { password = value; }
         }
+
+        public bool RememberMe
+        {
+            get { return rememberMe; }
+            set { rememberMe = value; }
+        }
     }
 }
