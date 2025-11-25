@@ -10,7 +10,6 @@ namespace TravelSiteModification.Controllers
 {
     public class HotelController : Controller
     {
-        // Index shows summary results. Uses session keys:
         // "HotelDestination", "CheckInDate", "CheckOutDate", "SelectedHotelID", etc.
         public IActionResult Index()
         {
@@ -162,17 +161,17 @@ namespace TravelSiteModification.Controllers
         }
 
         // POST: Hotel/SelectRoom
-        //[HttpPost]
-        //public IActionResult SelectRoom(int roomId, string checkInDate, string checkOutDate)
-        //{
-        //    // store selected room and dates and redirect to booking page
-        //    HttpContext.Session.SetInt32("SelectedRoomID", roomId);
-        //    HttpContext.Session.SetString("CheckInDate", checkInDate);
-        //    HttpContext.Session.SetString("CheckOutDate", checkOutDate);
+        [HttpPost]
+        public IActionResult SelectRoom(int roomId, string checkInDate, string checkOutDate)
+        {
+            // store selected room and dates and redirect to booking page
+            HttpContext.Session.SetInt32("SelectedRoomID", roomId);
+            HttpContext.Session.SetString("CheckInDate", checkInDate);
+            HttpContext.Session.SetString("CheckOutDate", checkOutDate);
 
-        //    // Redirect to HotelBooking controller
-        //    return RedirectToAction("Index", "HotelBooking");
-        //}
+            // Redirect to HotelBooking controller
+            return RedirectToAction("Index", "HotelBooking");
+        }
 
         public IActionResult Logout()
         {
