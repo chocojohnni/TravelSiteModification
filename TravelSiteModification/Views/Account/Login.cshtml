@@ -1,10 +1,17 @@
 ﻿@model TravelSiteModification.Models.LoginViewModel
 
 @{
-	ViewData["Title"] = "Login";
+    ViewData["Title"] = "Login";
 }
 
 <h2>Login</h2>
+
+@if (ViewBag.CookieMessage != null)
+{
+    <div class="alert alert-info">
+        @ViewBag.CookieMessage
+    </div>
+}
 
 <form asp-action="Login" method="post">
     <div class="form-group">
@@ -19,9 +26,23 @@
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
 
+    <div class="form-check mt-2">
+        <input asp-for="RememberMe" class="form-check-input" />
+        <label asp-for="RememberMe" class="form-check-label"></label>
+    </div>
+
     <button type="submit" class="btn btn-primary mt-3">Sign In</button>
 
     <div class="text-danger mt-2">
         @Html.ValidationSummary()
     </div>
 </form>
+
+@if (ViewBag.HasSavedLogin == true)
+{
+    <form asp-action="ClearSavedLogin" method="post" class="mt-3">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">
+            Forget saved login
+        </button>
+    </form>
+}

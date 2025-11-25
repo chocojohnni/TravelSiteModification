@@ -20,7 +20,29 @@ namespace TravelSiteModification.Controllers
         // GET: /Account/Login
         public IActionResult Login()
         {
-            return View();
+            LoginViewModel model = new LoginViewModel();
+
+            // Check if we already have a saved login cookie
+            string savedEmail = Request.Cookies["TravelSiteLoginEmail"];
+
+            if (!string.IsNullOrEmpty(savedEmail))
+            {
+                model.Email = savedEmail;
+                model.RememberMe = true;
+                ViewBag.HasSavedLogin = true;
+            }
+            else
+            {
+                ViewBag.HasSavedLogin = false;
+            }
+
+            // If there is a TempData message (e.g., after clearing the cookie), pass it along
+            if (TempData.ContainsKey("CookieMessage"))
+            {
+                ViewBag.CookieMessage = TempData["CookieMessage"].ToString();
+            }
+
+            return View(model);
         }
 
         // POST: /Account/Login
@@ -51,6 +73,26 @@ namespace TravelSiteModification.Controllers
                 HttpContext.Session.SetString("UserEmail", model.Email);
                 HttpContext.Session.SetInt32("UserID", userID);
 
+                // Handle "remember me" cookie for faster logins
+                if (model.RememberMe)
+                {
+                    CookieOptions options = new CookieOptions();
+                    options.Expires = DateTimeOffset.UtcNow.AddDays(30);
+                    options.IsEssential = true;
+                    options.HttpOnly = true;
+                    options.Secure = true;
+                    options.SameSite = SameSiteMode.Lax;
+
+                    Response.Cookies.Append("TravelSiteLoginEmail", model.Email, options);
+                }
+                else
+                {
+                    if (Request.Cookies.ContainsKey("TravelSiteLoginEmail"))
+                    {
+                        Response.Cookies.Delete("TravelSiteLoginEmail");
+                    }
+                }
+
                 // Redirect after login
                 if (HttpContext.Session.GetString("RedirectAfterLogin") != null)
                 {
@@ -64,6 +106,20 @@ namespace TravelSiteModification.Controllers
 
             ModelState.AddModelError("", "Incorrect email or password.");
             return View(model);
+        }
+
+        // POST: /Account/ClearSavedLogin
+        [HttpPost]
+        public IActionResult ClearSavedLogin()
+        {
+            if (Request.Cookies.ContainsKey("TravelSiteLoginEmail"))
+            {
+                Response.Cookies.Delete("TravelSiteLoginEmail");
+            }
+
+            TempData["CookieMessage"] = "Saved login removed. You will need to enter your email next time.";
+
+            return RedirectToAction("Login");
         }
     }
 }
