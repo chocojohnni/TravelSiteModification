@@ -35,7 +35,7 @@ namespace TravelSiteModification.Controllers
                 DBConnect db = new DBConnect();
                 SqlCommand cmd = new SqlCommand();
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = "GetHotelsByCity";
+                cmd.CommandText = "GetHotelsByCityRefined";
                 cmd.Parameters.AddWithValue("@City", vm.Destination);
 
                 DataSet ds = db.GetDataSetUsingCmdObj(cmd);
