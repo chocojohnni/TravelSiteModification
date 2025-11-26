@@ -62,7 +62,7 @@ namespace EventsWebAPI.Controllers
         /// <response code="200">A DataSet containing activities and offerings.</response>
         /// <response code="500">Server error with message.</response>
         [HttpGet("Activities")]
-        [Produces("application/xml")]
+        [Produces("application/json")]
         public IActionResult GetActivities([FromQuery] string city, [FromQuery] string state)
         {
             try
@@ -71,7 +71,8 @@ namespace EventsWebAPI.Controllers
 
                 if (ds == null || ds.Tables.Count == 0)
                 {
-                    return Ok(new List<EventActivity>());
+                    List<EventActivity> emptyList = new List<EventActivity>();
+                    return Ok(emptyList);
                 }
 
                 DataTable table = ds.Tables[0];
@@ -130,7 +131,6 @@ namespace EventsWebAPI.Controllers
         /// <response code="200">A DataSet of filtered activities.</response>
         /// <response code="500">Server error with message.</response>
         [HttpGet("FindActivities")]
-        [Produces("application/xml")]
         public IActionResult FindActivities([FromQuery] string city, [FromQuery] string state, [FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] string? keyword)
         {
             try

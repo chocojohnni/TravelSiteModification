@@ -15,6 +15,11 @@ builder.Services.AddHttpClient<EventsAPIClient>(client =>
     }
 });
 
+//builder.Services.AddHttpClient<EventsAPIClient>(client =>
+//{
+//    client.BaseAddress = new Uri("https://localhost:7272/");
+//});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
