@@ -28,19 +28,17 @@ namespace TravelSiteModification.Services
                 Uri.EscapeDataString(state);
 
             HttpResponseMessage response = await client.GetAsync(url);
+            string content = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                return new List<EventActivity>();
+                throw new Exception("Events API error " + (int)response.StatusCode + ": " + content);
             }
 
-            string json = await response.Content.ReadAsStringAsync();
-
-            var options = new JsonSerializerOptions();
+            JsonSerializerOptions options = new JsonSerializerOptions();
             options.PropertyNameCaseInsensitive = true;
 
-            List<EventActivity> events =
-                JsonSerializer.Deserialize<List<EventActivity>>(json, options);
+            List<EventActivity> events = JsonSerializer.Deserialize<List<EventActivity>>(content, options);
 
             if (events == null)
             {
