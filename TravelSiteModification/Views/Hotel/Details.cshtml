@@ -31,7 +31,7 @@
 }
 else
 {
-    <form asp-action="SelectRoom" method="post">
+    <form asp-controller="HotelBooking" asp-action="SelectRoom" method="post">
         <input type="hidden" name="checkInDate" value="@checkIn" />
         <input type="hidden" name="checkOutDate" value="@checkOut" />
 
@@ -54,7 +54,9 @@ else
                         <td>@r.Price.ToString("C")</td>
                         <td>@r.MaxOccupancy</td>
                         <td>
-                            <button type="submit" name="roomId" value="@r.Id" class="btn btn-success btn-sm">Select</button>
+                            <button type="submit" name="roomId" value="@r.Id" class="btn btn-success btn-sm">
+                                Select
+                            </button>
                         </td>
                     </tr>
                 }
