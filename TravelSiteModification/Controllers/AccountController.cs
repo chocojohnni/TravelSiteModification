@@ -20,7 +20,29 @@ namespace TravelSiteModification.Controllers
         // GET: /Account/Login
         public IActionResult Login()
         {
-            return View();
+            LoginViewModel model = new LoginViewModel();
+
+            // Check if we already have a saved login cookie
+            string savedEmail = Request.Cookies["TravelSiteLoginEmail"];
+
+            if (!string.IsNullOrEmpty(savedEmail))
+            {
+                model.Email = savedEmail;
+                model.RememberMe = true;
+                ViewBag.HasSavedLogin = true;
+            }
+            else
+            {
+                ViewBag.HasSavedLogin = false;
+            }
+
+            // If there is a TempData message (e.g., after clearing the cookie), pass it along
+            if (TempData.ContainsKey("CookieMessage"))
+            {
+                ViewBag.CookieMessage = TempData["CookieMessage"].ToString();
+            }
+
+            return View(model);
         }
 
         // POST: /Account/Login
@@ -51,6 +73,26 @@ namespace TravelSiteModification.Controllers
                 HttpContext.Session.SetString("UserEmail", model.Email);
                 HttpContext.Session.SetInt32("UserID", userID);
 
+                // Handle "remember me" cookie for faster logins
+                if (model.RememberMe)
+                {
+                    CookieOptions options = new CookieOptions();
+                    options.Expires = DateTimeOffset.UtcNow.AddDays(30);
+                    options.IsEssential = true;
+                    options.HttpOnly = true;
+                    options.Secure = true;
+                    options.SameSite = SameSiteMode.Lax;
+
+                    Response.Cookies.Append("TravelSiteLoginEmail", model.Email, options);
+                }
+                else
+                {
+                    if (Request.Cookies.ContainsKey("TravelSiteLoginEmail"))
+                    {
+                        Response.Cookies.Delete("TravelSiteLoginEmail");
+                    }
+                }
+
                 // Redirect after login
                 if (HttpContext.Session.GetString("RedirectAfterLogin") != null)
                 {
@@ -64,6 +106,150 @@ namespace TravelSiteModification.Controllers
 
             ModelState.AddModelError("", "Incorrect email or password.");
             return View(model);
+        }
+
+        // POST: /Account/ClearSavedLogin
+        [HttpPost]
+        public IActionResult ClearSavedLogin()
+        {
+            if (Request.Cookies.ContainsKey("TravelSiteLoginEmail"))
+            {
+                Response.Cookies.Delete("TravelSiteLoginEmail");
+            }
+
+            TempData["CookieMessage"] = "Saved login removed. You will need to enter your email next time.";
+
+            return RedirectToAction("Login");
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult ForgotPassword(string email)
+        {
+            // Check if user exists
+            SqlCommand checkCmd = new SqlCommand();
+            checkCmd.CommandType = CommandType.StoredProcedure;
+            checkCmd.CommandText = "CheckUserEmail";
+            checkCmd.Parameters.AddWithValue("@Email", email);
+
+            DataSet ds = db.GetDataSetUsingCmdObj(checkCmd);
+
+            if (ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0)
+            {
+                ViewBag.Error = "No account found with that email.";
+                return View();
+            }
+
+            // Load the user’s security questions
+            SqlCommand qsCmd = new SqlCommand();
+            qsCmd.CommandType = CommandType.StoredProcedure;
+            qsCmd.CommandText = "TP_GetUserSecurityQuestions";
+            qsCmd.Parameters.AddWithValue("@Email", email);
+
+            DataSet qs = db.GetDataSetUsingCmdObj(qsCmd);
+
+            if (qs.Tables.Count == 0 || qs.Tables[0].Rows.Count == 0)
+            {
+                ViewBag.Error = "This account has no security questions.";
+                return View();
+            }
+
+            // Pick a random question
+            Random rand = new Random();
+            int index = rand.Next(0, qs.Tables[0].Rows.Count);
+
+            DataRow row = qs.Tables[0].Rows[index];
+
+            string questionText = row["QuestionText"].ToString();
+            string correctAnswer = row["Answer"].ToString();
+            int userID = Convert.ToInt32(row["UserID"]);
+
+            // Store in Session for later
+            HttpContext.Session.SetInt32("Reset_UserID", userID);
+            HttpContext.Session.SetString("Reset_Question", questionText);
+            HttpContext.Session.SetString("Reset_Answer", correctAnswer);
+
+            return RedirectToAction("VerifySecurityQuestion");
+        }
+
+        [HttpGet]
+        public IActionResult VerifySecurityQuestion()
+        {
+            if (HttpContext.Session.GetString("Reset_Question") == null)
+            {
+                return RedirectToAction("ForgotPassword");
+            }
+            ViewBag.Question = HttpContext.Session.GetString("Reset_Question");
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult VerifySecurityQuestion(string answer)
+        {
+            string correctAnswer = HttpContext.Session.GetString("Reset_Answer");
+
+            if (correctAnswer == null)
+            {
+                return RedirectToAction("ForgotPassword");
+            }
+
+            if (!string.Equals(answer.Trim(), correctAnswer.Trim()))
+            {
+                ViewBag.Error = "Incorrect answer. Please try again.";
+                ViewBag.Question = HttpContext.Session.GetString("Reset_Question");
+                return View();
+            }
+
+            return RedirectToAction("ResetPassword");
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword()
+        {
+            if (HttpContext.Session.GetInt32("Reset_UserID") == null)
+            {
+                return RedirectToAction("ForgotPassword");
+            }
+
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult ResetPassword(string newPassword, string confirmPassword)
+        {
+            if (newPassword != confirmPassword)
+            {
+                ViewBag.Error = "Passwords do not match.";
+                return View();
+            }
+
+            int userID = HttpContext.Session.GetInt32("Reset_UserID") ?? -1;
+
+            if (userID == -1)
+            {
+                return RedirectToAction("ForgotPassword");
+            }
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "TP_UpdateUserPassword";
+            cmd.Parameters.AddWithValue("@UserID", userID);
+            cmd.Parameters.AddWithValue("@NewPassword", newPassword);
+
+            db.DoUpdateUsingCmdObj(cmd);
+
+            // Clear session afterwards
+            HttpContext.Session.Remove("Reset_UserID");
+            HttpContext.Session.Remove("Reset_Question");
+            HttpContext.Session.Remove("Reset_Answer");
+
+            TempData["Success"] = "Your password has been reset successfully!";
+            return RedirectToAction("Login");
         }
     }
 }

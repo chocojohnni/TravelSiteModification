@@ -61,8 +61,9 @@
 <hr />
 
 <h3>Search Events</h3>
-<form method="post" asp-action="SearchEvents">
-    <input type="text" name="eventLocation" placeholder="City or attraction code" />
+<form method="post" asp-controller="Event" asp-action="SearchEvents">
+    <input type="text" name="city" placeholder="City (e.g., Philadelphia)" />
+    <input type="text" name="state" placeholder="State (e.g., PA)" />
     <button type="submit">Search Events</button>
 </form>
 

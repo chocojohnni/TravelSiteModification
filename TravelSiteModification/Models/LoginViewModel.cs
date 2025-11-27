@@ -6,6 +6,7 @@ namespace TravelSiteModification.Models
     {
         private string email;
         private string password;
+        private bool rememberMe;
 
         [Required]
         [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
@@ -20,6 +21,12 @@ namespace TravelSiteModification.Models
         {
             get { return password; }
             set { password = value; }
+        }
+
+        public bool RememberMe
+        {
+            get { return rememberMe; }
+            set { rememberMe = value; }
         }
     }
 }
