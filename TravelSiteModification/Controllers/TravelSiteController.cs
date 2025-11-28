@@ -73,7 +73,7 @@ namespace TravelSiteModification.Controllers
             HttpContext.Session.SetString("CarPickupDate", pickupDate);
             HttpContext.Session.SetString("CarDropoffDate", dropoffDate);
 
-            return RedirectToAction("Index", "Car");
+            return RedirectToAction("Index", "Cars");
         }
 
         [HttpPost]
