@@ -1,0 +1,62 @@
+﻿@model TravelSiteModification.Models.FlightSearchRequest
+
+@{
+    ViewData["Title"] = "Find Flights";
+}
+
+<h2>Find Flights</h2>
+
+<form asp-action="Find" method="post">
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Departure</h4>
+            <div class="mb-3">
+                <label asp-for="DepCity" class="form-label"></label>
+                <input asp-for="DepCity" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="DepState" class="form-label"></label>
+                <input asp-for="DepState" class="form-control" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h4>Arrival</h4>
+            <div class="mb-3">
+                <label asp-for="ArrCity" class="form-label"></label>
+                <input asp-for="ArrCity" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="ArrState" class="form-label"></label>
+                <input asp-for="ArrState" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <h4>Flight Requirements</h4>
+
+    <div class="mb-3">
+        <label asp-for="AirlineID" class="form-label"></label>
+        <input asp-for="AirlineID" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="MaxPrice" class="form-label"></label>
+        <input asp-for="MaxPrice" class="form-control" />
+    </div>
+
+    <div class="mb-3 form-check">
+        <input asp-for="NonStop" class="form-check-input" />
+        <label asp-for="NonStop" class="form-check-label"></label>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input asp-for="FirstClass" class="form-check-input" />
+        <label asp-for="FirstClass" class="form-check-label"></label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Search Flights</button>
+
+    <div class="text-danger mt-3">
+        @Html.ValidationSummary(true)
+    </div>
+</form>

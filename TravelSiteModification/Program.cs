@@ -16,6 +16,12 @@ builder.Services.AddHttpClient<EventsAPIClient>(client =>
     }
 });
 
+builder.Services.AddHttpClient<FlightsAPIClient>(client =>
+{
+    string baseUrl = "https://cis-iis2.temple.edu/Fall2025/CIS3342_tun31378/WebAPI/";
+    client.BaseAddress = new Uri(baseUrl);
+});
+
 //builder.Services.AddHttpClient<EventsAPIClient>(client =>
 //{
 //    client.BaseAddress = new Uri("https://localhost:7272/");

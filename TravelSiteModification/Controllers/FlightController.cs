@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.SqlClient;
 using TravelSiteModification.Models;
+using TravelSiteModification.Services;
 using Utilities;
 
 namespace TravelSiteModification.Controllers
@@ -9,9 +10,11 @@ namespace TravelSiteModification.Controllers
     public class FlightController : Controller
     {
         private readonly DBConnect db;
-        public FlightController()
+        private readonly FlightsAPIClient flightsApiClient;
+        public FlightController(FlightsAPIClient flightsClient)
         {
             db = new DBConnect();
+            flightsApiClient = flightsClient;
         }
         public IActionResult Index()
         {
@@ -167,6 +170,41 @@ namespace TravelSiteModification.Controllers
             }
 
             return View("~/Views/TravelSite/FlightBooking.cshtml", model);
+        }
+
+        [HttpGet]
+        public IActionResult Find()
+        {
+            FlightSearchRequest model = new FlightSearchRequest();
+            model.NonStop = true;
+            model.FirstClass = false;
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Find(FlightSearchRequest model)
+        {
+            if (ModelState.IsValid == false)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                List<FlightDto> flights = await flightsApiClient.FindFlightsAsync(model);
+
+                FlightSearchResultsViewModel viewModel = new FlightSearchResultsViewModel();
+                viewModel.Search = model;
+                viewModel.Flights = flights;
+
+                return View("FindResults", viewModel);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(String.Empty, "Error calling Flights API: " + ex.Message);
+                return View(model);
+            }
         }
     }
 }
