@@ -1,0 +1,66 @@
+﻿@model TravelSiteModification.Models.FlightSearchResultsViewModel
+
+@{
+    ViewData["Title"] = "Flight Search Results";
+}
+
+<h2>Flight Search Results</h2>
+
+<p>
+    From @Model.Search.DepCity, @Model.Search.DepState
+    to @Model.Search.ArrCity, @Model.Search.ArrState
+    | Airline ID: @Model.Search.AirlineID
+    | Max Price: @Model.Search.MaxPrice
+</p>
+
+@if (Model.Flights == null || Model.Flights.Count == 0)
+{
+    <p>No flights found for the given criteria.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Flight ID</th>
+                <th>Carrier</th>
+                <th>Route</th>
+                <th>Departure</th>
+                <th>Arrival</th>
+                <th>Price</th>
+                <th>Seats</th>
+                <th>Non-stop</th>
+                <th>First Class</th>
+                <th></th> @* Book column *@
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var flight in Model.Flights)
+            {
+                <tr>
+                    <td>@flight.FlightID</td>
+                    <td>@flight.AirCarrierID</td>
+                    <td>
+                        @flight.DepartureCity, @flight.DepartureState
+                        &rarr;
+                        @flight.ArrivalCity, @flight.ArrivalState
+                    </td>
+                    <td>@flight.DepartureTime</td>
+                    <td>@flight.ArrivalTime</td>
+                    <td>@flight.SeatPrice</td>
+                    <td>@flight.SeatsAvailable</td>
+                    <td>@flight.NonStop</td>
+                    <td>@flight.FirstClass</td>
+                    <td>
+                        <a asp-controller="Flight"
+                           asp-action="Book"
+                           asp-route-flightId="@flight.FlightID"
+                           class="btn btn-sm btn-primary">
+                            Book
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
