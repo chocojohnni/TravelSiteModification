@@ -24,7 +24,6 @@ namespace TravelSiteModification.Controllers
         [HttpGet]
         public IActionResult Book(int flightId)
         {
-            // Make sure the user is logged in
             int? userIdNullable = HttpContext.Session.GetInt32("UserID");
             int userIdValue = 0;
 
@@ -40,6 +39,7 @@ namespace TravelSiteModification.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Try to load flight details from db
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "GetFlightByID";
@@ -47,24 +47,38 @@ namespace TravelSiteModification.Controllers
 
             DataSet ds = db.GetDataSetUsingCmdObj(cmd);
 
-            if (ds == null || ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0)
-            {
-                return RedirectToAction("Index", "TravelSite");
-            }
-
-            DataRow row = ds.Tables[0].Rows[0];
-
-            decimal price = 0;
-
-            if (row["Price"] != DBNull.Value)
-            {
-                price = Convert.ToDecimal(row["Price"]);
-            }
-
             FlightBookingViewModel model = new FlightBookingViewModel();
             model.FlightId = flightId;
-            model.Price = price;
 
+            if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+            {
+                DataRow row = ds.Tables[0].Rows[0];
+
+                decimal price = 0;
+                if (row["Price"] != DBNull.Value)
+                {
+                    price = Convert.ToDecimal(row["Price"]);
+                }
+                model.Price = price;
+
+                ViewBag.AirlineName = row["AirlineName"].ToString();
+                ViewBag.DepartureCity = row["DepartureCity"].ToString();
+                ViewBag.ArrivalCity = row["ArrivalCity"].ToString();
+                ViewBag.DepartureTime = Convert.ToDateTime(row["DepartureTime"]);
+                ViewBag.ArrivalTime = Convert.ToDateTime(row["ArrivalTime"]);
+            }
+            else
+            {
+                model.Price = 0;
+
+                ViewBag.AirlineName = "Selected Flight";
+                ViewBag.DepartureCity = "";
+                ViewBag.ArrivalCity = "";
+                ViewBag.DepartureTime = DateTime.Now;
+                ViewBag.ArrivalTime = DateTime.Now;
+            }
+
+            // passenger info from session
             string firstName = HttpContext.Session.GetString("UserFirstName");
             if (String.IsNullOrEmpty(firstName) == false)
             {
@@ -76,12 +90,6 @@ namespace TravelSiteModification.Controllers
             {
                 model.Email = email;
             }
-
-            ViewBag.AirlineName = row["AirlineName"].ToString();
-            ViewBag.DepartureCity = row["DepartureCity"].ToString();
-            ViewBag.ArrivalCity = row["ArrivalCity"].ToString();
-            ViewBag.DepartureTime = Convert.ToDateTime(row["DepartureTime"]);
-            ViewBag.ArrivalTime = Convert.ToDateTime(row["ArrivalTime"]);
 
             return View("~/Views/TravelSite/FlightBooking.cshtml", model);
         }
@@ -176,18 +184,46 @@ namespace TravelSiteModification.Controllers
         public IActionResult Find()
         {
             FlightSearchRequest model = new FlightSearchRequest();
-            model.NonStop = true;
-            model.FirstClass = false;
 
-            return View(model);
+            string depCity = Request.Query["DepCity"];
+            if (String.IsNullOrEmpty(depCity) == false)
+            {
+                model.DepCity = depCity;
+            }
+
+            string arrCity = Request.Query["ArrCity"];
+            if (String.IsNullOrEmpty(arrCity) == false)
+            {
+                model.ArrCity = arrCity;
+            }
+
+            // Default “broad” filter values
+            if (model.NonStop == false && model.FirstClass == false && model.AirlineID == 0 && model.MaxPrice == 0)
+            {
+                model.NonStop = true;
+                model.FirstClass = false;
+                model.MaxPrice = 10000;
+            }
+
+            return View("~/Views/Flight/Find.cshtml", model);
         }
 
         [HttpPost]
         public async Task<IActionResult> Find(FlightSearchRequest model)
         {
-            if (ModelState.IsValid == false)
+            if (!ModelState.IsValid)
             {
-                return View(model);
+                return View("~/Views/Flight/Find.cshtml", model);
+            }
+
+            if (model.AirlineID == 0)
+            {
+                // 0 means no specific airline
+            }
+
+            if (model.MaxPrice <= 0)
+            {
+                model.MaxPrice = 10000;
             }
 
             try
@@ -198,12 +234,12 @@ namespace TravelSiteModification.Controllers
                 viewModel.Search = model;
                 viewModel.Flights = flights;
 
-                return View("FindResults", viewModel);
+                return View("~/Views/Flight/FindResults.cshtml", viewModel);
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError(String.Empty, "Error calling Flights API: " + ex.Message);
-                return View(model);
+                return View("~/Views/Flight/Find.cshtml", model);
             }
         }
     }
