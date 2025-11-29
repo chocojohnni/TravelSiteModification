@@ -1,30 +1,60 @@
-﻿@model CarSearchViewModel
+﻿@model TravelSiteModification.Models.CarResultsViewModel
+<div class="row g-3">
+    <div class="col-md-3">
+        <label class="form-label">Pickup Location</label>
+        <input asp-for="PickupLocation" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Dropoff Location</label>
+        <input asp-for="DropoffLocation" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Pickup Date</label>
+        <input type="date" asp-for="PickupDate" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Dropoff Date</label>
+        <input type="date" asp-for="DropoffDate" class="form-control" />
+    </div>
+</div>
 
-@{
-    ViewData["Title"] = "Car Rental Search Results";
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <p class="text-danger mt-2">@ViewData.ModelState[string.Empty]?.Errors.FirstOrDefault()?.ErrorMessage</p>
 }
 
-<div class="container py-5">
 
-    <h1 class="mb-4">Car Rental Search Results</h1>
+<button class="btn btn-primary mt-3">Update Search</button>
 
-    <!-- Search refinement form -->
-    @await Html.PartialAsync("_SearchCarForm", Model)
 
-    <hr />
-
-    <!-- Search criteria summary -->
-    @if (!string.IsNullOrEmpty(Model.PickupLocation))
-    {
-        <p class="fs-5">
-            Showing results for car rentals from
-            <strong>@Model.PickupLocation</strong>
-            to
-            <strong>@Model.DropoffLocation</strong>
-        </p>
-    }
-
-    <!-- Car results table -->
-    @await Html.PartialAsync("_CarListTable", Model)
-
-</div>
+@if (Model.Cars != null && Model.Cars.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Model</th>
+                <th>Type</th>
+                <th>Price/Day</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var car in Model.Cars)
+            {
+                <tr>
+                    <td>@car.CarModel</td>
+                    <td>@car.CarType</td>
+                    <td>@car.PricePerDay.ToString("C")</td>
+                    <td>
+                        <a asp-action="Details" asp-route-carId="@car.CarID" asp-route-agencyId="@car.AgencyID" class="btn btn-sm btn-outline-primary">View Details</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p class="alert alert-warning">No cars found for this search.</p>
+}
