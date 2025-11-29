@@ -31,15 +31,17 @@
 <hr />
 
 <h3>Search Flights</h3>
-<form method="post" asp-action="SearchFlights">
-    <select name="origin">
-        <option value="Seattle">Seattle</option>
+<form asp-controller="Flight" asp-action="Find" method="get">
+    <select name="DepCity">
         <option value="New York">New York</option>
+        <option value="Seattle">Seattle</option>
     </select>
-    <select name="destination">
+
+    <select name="ArrCity">
         <option value="Los Angeles">Los Angeles</option>
         <option value="Miami">Miami</option>
     </select>
+
     <button type="submit">Search Flights</button>
 </form>
 
