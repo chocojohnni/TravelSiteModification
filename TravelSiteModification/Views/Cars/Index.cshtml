@@ -1,74 +1,125 @@
 ﻿@model CarSearchViewModel
-
-<h2 class="mb-4">Find Your Rental Car</h2>
-
-<form method="post">
-    <div class="row g-3">
-        <div class="col-md-3">
-            <label>Pickup Location</label>
-            <select asp-for="PickupLocation" class="form-control">
-                <option value="">Choose...</option>
-                @foreach (var loc in Model.Locations)
-                {
-                    <option>@loc</option>
-                }
-            </select>
-        </div>
-
-        <div class="col-md-3">
-            <label>Dropoff Location</label>
-            <select asp-for="DropoffLocation" class="form-control">
-                <option value="">Choose...</option>
-                @foreach (var loc in Model.Locations)
-                {
-                    <option>@loc</option>
-                }
-            </select>
-        </div>
-
-        <div class="col-md-3">
-            <label>Pickup Date</label>
-            <input asp-for="PickupDate" type="date" class="form-control" />
-        </div>
-
-        <div class="col-md-3">
-            <label>Dropoff Date</label>
-            <input asp-for="DropoffDate" type="date" class="form-control" />
-        </div>
-    </div>
-
-    <button class="btn btn-primary mt-3">Search</button>
-</form>
-
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <p class="alert alert-danger mt-3">@Model.ErrorMessage</p>
+@{
+    ViewData["Title"] = "Cars";
+    Model.Locations ??= new List<string>();
+    Model.Results ??= new List<Car>();
 }
 
-@if (Model.Results.Any())
+
+<h2>Rental Cars</h2>
+
+@if (Model != null)
 {
-    <hr />
-    <h4 class="mb-3">Available Cars</h4>
+    if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="mb-2">@Html.Raw(Model.Message)</div>
+    }
 
-    <div class="row">
-        @foreach (var car in Model.Results)
-        {
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <img src="@car.ImagePath" class="card-img-top" />
+    if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="text-danger mb-2">@Model.ErrorMessage</div>
+    }
 
-                    <div class="card-body">
-                        <h5>@car.CarModel</h5>
-                        <p class="text-muted">@car.CarType</p>
-                        <p><strong>@car.PricePerDay.ToString("C")/day</strong></p>
+    <form asp-action="Search" method="post" class="mb-3 row g-2">
+        <div class="col-auto">
+            <label class="form-label">Pickup Location</label>
+            <select name="pickupLocation" class="form-select">
+                <option value="">-- Select --</option>
+                @if (Model.Locations != null)
+                {
+                    foreach (var loc in Model.Locations)
+                    {
+                        <option value="@loc" selected="@(loc == Model.PickupLocation)">
+                            @loc
+                        </option>
+                    }
+                }
+            </select>
+        </div>
 
-                        <a class="btn btn-outline-primary"
-                           href="/Cars/Details?carId=@car.CarID&agencyId=@car.AgencyID">
-                            View Details
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
+        <div class="col-auto">
+            <label class="form-label">Dropoff Location</label>
+            <select name="dropoffLocation" class="form-select">
+                <option value="">-- Select --</option>
+                @if (Model.Locations != null)
+                {
+                    foreach (var loc in Model.Locations)
+                    {
+                        <option value="@loc" selected="@(loc == Model.DropoffLocation)">
+                            @loc
+                        </option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <label class="form-label">Pickup Date</label>
+            <input type="date" name="pickupDate" class="form-control"
+                   value="@(Model.PickupDate)" />
+        </div>
+
+        <div class="col-auto">
+            <label class="form-label">Dropoff Date</label>
+            <input type="date" name="dropoffDate" class="form-control"
+                   value="@(Model.DropoffDate)" />
+        </div>
+
+        <div class="col-auto align-self-end">
+            <button class="btn btn-primary">Search Cars</button>
+        </div>
+    </form>
+
+    @if (Model.Results == null || !Model.Results.Any())
+    {
+        <div class="alert alert-info">No cars available for your search.</div>
+    }
+    else
+    {
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Car Model</th>
+                    <th>Car Type</th>
+                    <th>Price/Day</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var car in Model.Results)
+                {
+                    <tr>
+                        <td>
+                            @if (!string.IsNullOrEmpty(car.ImagePath))
+                            {
+                                <img src="@car.ImagePath" alt="@car.CarModel"
+                                     style="width:120px;height:auto" />
+                            }
+                        </td>
+
+                        <td>@car.CarModel</td>
+                        <td>@car.CarType</td>
+                        <td>@car.PricePerDay.ToString("C")</td>
+
+                        <td>
+                            <a asp-action="Details"
+                               asp-route-carId="@car.CarID"
+                               asp-route-agencyId="@car.AgencyID"
+                               class="btn btn-sm btn-outline-primary">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+else
+{
+    <div class="alert alert-warning">
+        No search information available.
     </div>
 }
