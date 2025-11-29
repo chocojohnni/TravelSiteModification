@@ -90,7 +90,7 @@ public class CarsController : Controller
 
     public IActionResult Details(int carId, int agencyId)
     {
-        var model = new CarDetailsViewModel();
+        var model = new CarDetailViewModel();
         DBConnect db = new DBConnect();
 
         SqlCommand cmd = new SqlCommand();
