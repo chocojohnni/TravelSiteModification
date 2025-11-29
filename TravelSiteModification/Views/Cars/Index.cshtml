@@ -1,125 +1,30 @@
 ﻿@model CarSearchViewModel
+
 @{
-    ViewData["Title"] = "Cars";
-    Model.Locations ??= new List<string>();
-    Model.Results ??= new List<Car>();
+    ViewData["Title"] = "Car Rental Search Results";
 }
 
+<div class="container py-5">
 
-<h2>Rental Cars</h2>
+    <h1 class="mb-4">Car Rental Search Results</h1>
 
-@if (Model != null)
-{
-    if (!string.IsNullOrEmpty(Model.Message))
+    <!-- Search refinement form -->
+    @await Html.PartialAsync("_SearchCarForm", Model)
+
+    <hr />
+
+    <!-- Search criteria summary -->
+    @if (!string.IsNullOrEmpty(Model.PickupLocation))
     {
-        <div class="mb-2">@Html.Raw(Model.Message)</div>
+        <p class="fs-5">
+            Showing results for car rentals from
+            <strong>@Model.PickupLocation</strong>
+            to
+            <strong>@Model.DropoffLocation</strong>
+        </p>
     }
 
-    if (!string.IsNullOrEmpty(Model.ErrorMessage))
-    {
-        <div class="text-danger mb-2">@Model.ErrorMessage</div>
-    }
+    <!-- Car results table -->
+    @await Html.PartialAsync("_CarListTable", Model)
 
-    <form asp-action="Search" method="post" class="mb-3 row g-2">
-        <div class="col-auto">
-            <label class="form-label">Pickup Location</label>
-            <select name="pickupLocation" class="form-select">
-                <option value="">-- Select --</option>
-                @if (Model.Locations != null)
-                {
-                    foreach (var loc in Model.Locations)
-                    {
-                        <option value="@loc" selected="@(loc == Model.PickupLocation)">
-                            @loc
-                        </option>
-                    }
-                }
-            </select>
-        </div>
-
-        <div class="col-auto">
-            <label class="form-label">Dropoff Location</label>
-            <select name="dropoffLocation" class="form-select">
-                <option value="">-- Select --</option>
-                @if (Model.Locations != null)
-                {
-                    foreach (var loc in Model.Locations)
-                    {
-                        <option value="@loc" selected="@(loc == Model.DropoffLocation)">
-                            @loc
-                        </option>
-                    }
-                }
-            </select>
-        </div>
-
-        <div class="col-auto">
-            <label class="form-label">Pickup Date</label>
-            <input type="date" name="pickupDate" class="form-control"
-                   value="@(Model.PickupDate)" />
-        </div>
-
-        <div class="col-auto">
-            <label class="form-label">Dropoff Date</label>
-            <input type="date" name="dropoffDate" class="form-control"
-                   value="@(Model.DropoffDate)" />
-        </div>
-
-        <div class="col-auto align-self-end">
-            <button class="btn btn-primary">Search Cars</button>
-        </div>
-    </form>
-
-    @if (Model.Results == null || !Model.Results.Any())
-    {
-        <div class="alert alert-info">No cars available for your search.</div>
-    }
-    else
-    {
-        <table class="table table-striped mt-3">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Car Model</th>
-                    <th>Car Type</th>
-                    <th>Price/Day</th>
-                    <th></th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @foreach (var car in Model.Results)
-                {
-                    <tr>
-                        <td>
-                            @if (!string.IsNullOrEmpty(car.ImagePath))
-                            {
-                                <img src="@car.ImagePath" alt="@car.CarModel"
-                                     style="width:120px;height:auto" />
-                            }
-                        </td>
-
-                        <td>@car.CarModel</td>
-                        <td>@car.CarType</td>
-                        <td>@car.PricePerDay.ToString("C")</td>
-
-                        <td>
-                            <a asp-action="Details"
-                               asp-route-carId="@car.CarID"
-                               asp-route-agencyId="@car.AgencyID"
-                               class="btn btn-sm btn-outline-primary">
-                                View Details
-                            </a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-}
-else
-{
-    <div class="alert alert-warning">
-        No search information available.
-    </div>
-}
+</div>
