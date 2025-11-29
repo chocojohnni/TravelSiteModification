@@ -1,0 +1,52 @@
+﻿@model CarSearchViewModel
+
+@if (Model.Results == null || !Model.Results.Any())
+{
+    <p class="alert alert-info mt-3">No rental cars were found matching your criteria.</p>
+}
+else
+{
+    <table class="table table-bordered table-striped mt-4">
+        <thead class="table-dark">
+            <tr>
+                <th>Car</th>
+                <th>Model</th>
+                <th>Type</th>
+                <th>Price/Day</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var car in Model.Results)
+            {
+                <tr>
+                    <td>
+                        <img src="@car.ImagePath" class="img-thumbnail" style="width: 100px;" />
+                    </td>
+                    <td>@car.CarModel</td>
+                    <td>@car.CarType</td>
+                    <td class="text-end">@car.PricePerDay.ToString("C")</td>
+                    <td>
+                        @if (car.Available)
+                        {
+                            <span class="text-success fw-bold">Available</span>
+                        }
+                        else
+                        {
+                            <span class="text-danger">Reserved</span>
+                        }
+                    </td>
+                    <td>
+                        <a asp-action="Details"
+                           asp-route-carId="@car.CarID"
+                           asp-route-agencyId="@car.AgencyID"
+                           class="btn btn-primary btn-sm @(car.Available ? "" : "disabled")">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
