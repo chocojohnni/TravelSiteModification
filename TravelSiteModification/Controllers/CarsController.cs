@@ -7,51 +7,68 @@ using Utilities;
 public class CarsController : Controller
 {
     private readonly DBConnect db = new DBConnect();
-
-    // -----------------------------
-    // SHOW SEARCH + RESULTS
-    // -----------------------------
     public IActionResult Index()
     {
         var model = new CarSearchViewModel
         {
-            Locations = new List<string> { "SEA", "LAX", "NYC", "MIA" }
+            PickupLocation = "",
+            DropoffLocation = "",
+            PickupDate = DateTime.Today.ToString("yyyy-MM-dd"),
+            DropoffDate = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd"),
+
+            // Prevent null reference
+            Locations = new List<string> { "SEA", "LAX", "NYC", "MIA" },
+            Results = new List<Car>(),
+
+            Message = "",
+            ErrorMessage = ""
         };
 
-        return View(model);
+        return View("Cars", model);
     }
 
-    // -----------------------------
-    // POST: PERFORM SEARCH
-    // -----------------------------
+
     [HttpPost]
-    public IActionResult Index(CarSearchViewModel model)
+    public IActionResult SearchCars(string pickupLocation, string dropoffLocation, string pickupDate, string dropoffDate)
     {
-        if (string.IsNullOrEmpty(model.PickupLocation) ||
-            string.IsNullOrEmpty(model.DropoffLocation))
-        {
-            model.ErrorMessage = "Please choose valid pickup and dropoff locations.";
-            return View(model);
-        }
+        // Save search inputs to session
+        HttpContext.Session.SetString("CarPickupLocation", pickupLocation);
+        HttpContext.Session.SetString("CarDropoffLocation", dropoffLocation);
+        HttpContext.Session.SetString("CarPickupDate", pickupDate);
+        HttpContext.Session.SetString("CarDropoffDate", dropoffDate);
 
-        if (model.DropoffDate <= model.PickupDate)
-        {
-            model.ErrorMessage = "Dropoff date must be after pickup date.";
-            return View(model);
-        }
+        // Go to results
+        return RedirectToAction("Results");
+    }
 
-        SqlCommand cmd = new SqlCommand
+    public IActionResult Results()
+    {
+        // Get search criteria from session
+        var pickup = HttpContext.Session.GetString("CarPickupLocation");
+        var dropoff = HttpContext.Session.GetString("CarDropoffLocation");
+        var pickupDate = HttpContext.Session.GetString("CarPickupDate");
+        var dropoffDate = HttpContext.Session.GetString("CarDropoffDate");
+
+        // Protect from direct navigation
+        if (pickup == null || dropoff == null)
+            return RedirectToAction("Index");
+
+        var model = new CarSearchViewModel
         {
-            CommandType = CommandType.StoredProcedure,
-            CommandText = "GetCarsByPickupAndDropoff"
+            PickupLocation = pickup,
+            DropoffLocation = dropoff,
+            PickupDate = DateTime.Parse(pickupDate),
+            DropoffDate = DateTime.Parse(dropoffDate),
+            Results = new List<CarResultViewModel>()
         };
 
-        cmd.Parameters.AddWithValue("@PickupLocation", model.PickupLocation);
-        cmd.Parameters.AddWithValue("@DropoffLocation", model.DropoffLocation);
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "GetCarsByPickupAndDropoff";
+        cmd.Parameters.AddWithValue("@PickupLocation", pickup);
+        cmd.Parameters.AddWithValue("@DropoffLocation", dropoff);
 
         DataSet ds = db.GetDataSetUsingCmdObj(cmd);
-
-        model.Results = new List<CarResultViewModel>();
 
         if (ds.Tables.Count > 0)
         {
@@ -68,34 +85,25 @@ public class CarsController : Controller
                 });
             }
         }
-
-        model.Locations = new List<string> { "SEA", "LAX", "NYC", "MIA" };
-
         return View(model);
     }
 
-    // -----------------------------
-    // CAR DETAILS PAGE
-    // -----------------------------
     public IActionResult Details(int carId, int agencyId)
     {
         var model = new CarDetailsViewModel();
         DBConnect db = new DBConnect();
 
-        // 1) MAIN CAR DETAILS
-        SqlCommand cmd = new SqlCommand
-        {
-            CommandType = CommandType.StoredProcedure,
-            CommandText = "GetCarAndAgencyDetails"
-        };
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "GetCarAndAgencyDetails";
         cmd.Parameters.AddWithValue("@CarID", carId);
 
-        DataTable dt = db.GetDataSetUsingCmdObj(cmd).Tables[0];
+        DataSet ds = db.GetDataSetUsingCmdObj(cmd);
 
-        if (dt.Rows.Count == 0)
+        if (ds.Tables[0].Rows.Count == 0)
             return RedirectToAction("Index");
 
-        DataRow row = dt.Rows[0];
+        DataRow row = ds.Tables[0].Rows[0];
 
         model.CarID = carId;
         model.CarModel = row["CarModel"].ToString();
@@ -107,20 +115,18 @@ public class CarsController : Controller
         model.AgencyPhone = row["Phone"].ToString();
         model.AgencyEmail = row["Email"].ToString();
 
-        // 2) OTHER CARS
-        SqlCommand cmd2 = new SqlCommand
-        {
-            CommandType = CommandType.StoredProcedure,
-            CommandText = "GetOtherAvailableCarsByAgencyID"
-        };
+        // Get "other cars from agency"
+        SqlCommand cmd2 = new SqlCommand();
+        cmd2.CommandType = CommandType.StoredProcedure;
+        cmd2.CommandText = "GetOtherAvailableCarsByAgencyID";
         cmd2.Parameters.AddWithValue("@AgencyID", agencyId);
         cmd2.Parameters.AddWithValue("@CarID", carId);
 
-        DataSet ds = db.GetDataSetUsingCmdObj(cmd2);
+        DataSet ds2 = db.GetDataSetUsingCmdObj(cmd2);
 
         model.OtherCars = new List<AgencyCarViewModel>();
 
-        foreach (DataRow r in ds.Tables[0].Rows)
+        foreach (DataRow r in ds2.Tables[0].Rows)
         {
             model.OtherCars.Add(new AgencyCarViewModel
             {
@@ -135,9 +141,34 @@ public class CarsController : Controller
         return View(model);
     }
 
-    // -----------------------------
-    // BOOK THE CAR
-    // -----------------------------
+    [HttpPost]
+    public IActionResult Search(string pickupLocation, string dropoffLocation,
+                            string pickupDate, string dropoffDate)
+    {
+        var model = new CarSearchViewModel
+        {
+            PickupLocation = pickupLocation,
+            DropoffLocation = dropoffLocation,
+            PickupDate = pickupDate,
+            DropoffDate = dropoffDate,
+            Locations = new List<string> { "SEA", "LAX", "NYC", "MIA" }
+        };
+
+        try
+        {
+            model.Results = _repo.SearchCars(model);
+            if (!model.Results.Any())
+                model.Message = "No search information available.";
+        }
+        catch (Exception ex)
+        {
+            model.ErrorMessage = "An error occurred while searching for cars.";
+        }
+
+        return View("Cars", model);
+    }
+
+
     public IActionResult Book(int id)
     {
         return RedirectToAction("Index", "CarBooking", new { carId = id });

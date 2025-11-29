@@ -10,6 +10,8 @@
         public List<string> Locations { get; set; } = new List<string>();
         public List<CarResultViewModel> Results { get; set; } = new List<CarResultViewModel>();
         public string ErrorMessage { get; set; }
+
+        public string Message { get; set; }
     }
 
 }
