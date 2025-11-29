@@ -1,65 +1,55 @@
-﻿@model CarDetailViewModel
-@{
-    ViewData["Title"] = "Car Details";
-}
-
-<h2 class="mb-3">Car Details</h2>
-
-@if (Model == null)
+﻿@if (Model.IsDetailView && Model.CarDetails != null)
 {
-    <div class="alert alert-danger">
-        Car details could not be loaded.
-    </div>
-}
-else
-{
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h3 class="card-title">@Model.CarModel (@Model.Year)</h3>
-            <p class="text-muted">@Model.AgencyName</p>
+    <button class="btn btn-secondary mb-3" onclick="location.href='@Url.Action("Index")'">Back</button>
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <strong>Pickup Location:</strong> @Model.PickupLocationCode
-                </div>
-                <div class="col-md-6">
-                    <strong>Dropoff Location:</strong> @Model.DropoffLocationCode
-                </div>
-            </div>
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <strong>Seats:</strong> @Model.Seats
-                </div>
-                <div class="col-md-6">
-                    <strong>Transmission:</strong> @Model.Transmission
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <strong>Price Per Day:</strong> $@Model.PricePerDay
-                </div>
-                <div class="col-md-6">
-                    <strong>Total Price:</strong> $@Model.TotalPrice
-                </div>
-            </div>
-
+    <div class="row">
+        <div class="col-md-6">
+            <img src="@Model.CarDetails.Car.ImagePath" class="img-fluid border rounded" />
+        </div>
+        <div class="col-md-6">
+            <h3>@Model.CarDetails.Car.CarModel</h3>
+            <p>Type: <strong>@Model.CarDetails.Car.CarType</strong></p>
+            <p>Price per Day: <strong>@Model.CarDetails.Car.PricePerDay.ToString("C")</strong></p>
             <hr />
+            <p><strong>@Model.CarDetails.AgencyName</strong></p>
+            <p>Phone: @Model.CarDetails.AgencyPhone</p>
+            <p>Email: @Model.CarDetails.AgencyEmail</p>
 
-            <h5>Car Description</h5>
-            <p>@Model.Description</p>
 
-            <hr />
-
-            <a href="@Url.Action("Index", "Cars")" class="btn btn-secondary">
-                Back to Results
-            </a>
-
-            <a href="@Url.Action("Book", "Cars", new { carId = Model.CarID })"
-               class="btn btn-primary ms-2">
-                Book This Car
-            </a>
+            <a asp-action="Book" class="btn btn-success mt-3">Book This Car</a>
         </div>
     </div>
+
+
+    <hr />
+    <h4>Other Cars from This Agency</h4>
+
+
+    @if (Model.CarDetails.OtherCars.Any())
+    {
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Type</th>
+                    <th>Price/Day</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var car in Model.CarDetails.OtherCars)
+                {
+                    <tr>
+                        <td>@car.CarModel</td>
+                        <td>@car.CarType</td>
+                        <td>@car.PricePerDay.ToString("C")</td>
+                        <td>
+                            <a asp-action="Details" asp-route-carId="@car.CarID" asp-route-agencyId="@car.AgencyID" class="btn btn-outline-primary btn-sm">View Details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 }
