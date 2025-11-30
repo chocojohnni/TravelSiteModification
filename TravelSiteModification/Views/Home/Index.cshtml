@@ -246,21 +246,15 @@
         <div class="tab-pane fade" id="events-tab">
             <h5 class="mb-3">Search Events & Attractions</h5>
 
-            <form method="post" asp-action="SearchEvents">
-                <label class="form-label">City or Attraction</label>
-                <select name="eventLocation" class="form-select mb-3">
-                    <option value="">Select City</option>
-                    <option>Orlando</option>
-                    <option>Miami</option>
-                    <option>Seattle</option>
-                    <option>Las Vegas</option>
-                    <option>New York</option>
-                </select>
+            <!-- CHANGED: added asp-controller and matching parameter names -->
+            <form method="post" asp-controller="Event" asp-action="SearchEvents">
+                <label class="form-label">City</label>
+                <input type="text" name="city" class="form-control mb-3" placeholder="City (e.g. Philadelphia)" />
 
-                <label class="form-label">Date (Optional)</label>
-                <input type="date" name="eventDate" class="form-control mb-3" />
+                <label class="form-label">State</label>
+                <input type="text" name="state" class="form-control mb-3" placeholder="State (e.g. PA)" />
 
-                <button class="btn btn-primary w-100">Search Events</button>
+                <button type="submit" class="btn btn-primary w-100">Search Events</button>
             </form>
         </div>
 
