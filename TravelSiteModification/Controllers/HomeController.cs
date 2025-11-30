@@ -1,32 +1,69 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using TravelSiteModification.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 namespace TravelSiteModification.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
         public IActionResult Index()
         {
+            ViewBag.FirstName = HttpContext.Session.GetString("UserFirstName");
             return View();
         }
 
-        public IActionResult Privacy()
+        // HOTEL SEARCH → redirects to HotelsController
+        [HttpPost]
+        public IActionResult SearchHotels(string destination, string checkIn, string checkOut)
         {
-            return View();
+            HttpContext.Session.SetString("HotelDestination", destination ?? "");
+            HttpContext.Session.SetString("CheckInDate", checkIn ?? "");
+            HttpContext.Session.SetString("CheckOutDate", checkOut ?? "");
+
+            return RedirectToAction("Index", "Hotels");
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        // FLIGHT SEARCH → redirects to FlightsController
+        [HttpPost]
+        public IActionResult SearchFlights(string origin, string destination)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            HttpContext.Session.SetString("FlightOrigin", origin ?? "");
+            HttpContext.Session.SetString("FlightDestination", destination ?? "");
+
+            return RedirectToAction("Index", "Flights");
+        }
+
+        // CAR SEARCH → redirects to CarsController
+        [HttpPost]
+        public IActionResult SearchCars(string pickupLocation, string dropoffLocation,
+                                        string pickupDate, string dropoffDate)
+        {
+            HttpContext.Session.SetString("CarPickupLocation", pickupLocation ?? "");
+            HttpContext.Session.SetString("CarDropoffLocation", dropoffLocation ?? "");
+            HttpContext.Session.SetString("CarPickupDate", pickupDate ?? "");
+            HttpContext.Session.SetString("CarDropoffDate", dropoffDate ?? "");
+
+            return RedirectToAction("Index", "Cars");
+        }
+
+        // EVENTS SEARCH
+        [HttpPost]
+        public IActionResult SearchEvents(string eventLocation, string eventDate)
+        {
+            HttpContext.Session.SetString("EventLocation", eventLocation ?? "");
+            HttpContext.Session.SetString("EventDate", eventDate ?? "");
+
+            return RedirectToAction("Index", "Events");
+        }
+
+        // PACKAGES SEARCH
+        [HttpPost]
+        public IActionResult SearchPackages(string origin, string destination, string date)
+        {
+            HttpContext.Session.SetString("PackageOrigin", origin ?? "");
+            HttpContext.Session.SetString("PackageDestination", destination ?? "");
+            HttpContext.Session.SetString("PackageDate", date ?? "");
+
+            return RedirectToAction("Index", "Packages");
         }
     }
 }
