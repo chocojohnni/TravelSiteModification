@@ -185,12 +185,15 @@ namespace TravelSiteModification.Controllers
         {
             DBConnect db = new DBConnect();
 
-            int userID;
-            if (HttpContext.Session.GetString("UserID") == null ||
-                !int.TryParse(HttpContext.Session.GetString("UserID"), out userID))
+            int? sessionUserId = HttpContext.Session.GetInt32("UserID");
+
+            if (sessionUserId == null || sessionUserId <= 0)
             {
                 return "<p class='alert alert-danger'>❌ User ID is missing or invalid.</p>";
             }
+
+            int userID = sessionUserId.Value;
+
 
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;

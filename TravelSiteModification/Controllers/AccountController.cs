@@ -108,6 +108,23 @@ namespace TravelSiteModification.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        public IActionResult Logout()
+        {
+            // Clear all session values
+            HttpContext.Session.Clear();
+
+            // OPTIONAL: Remove login cookie if it exists
+            if (Request.Cookies.ContainsKey("TravelSiteLoginEmail"))
+            {
+                Response.Cookies.Delete("TravelSiteLoginEmail");
+            }
+
+            // Redirect to homepage
+            return RedirectToAction("Index", "Home");
+        }
+
+
         // POST: /Account/ClearSavedLogin
         [HttpPost]
         public IActionResult ClearSavedLogin()
