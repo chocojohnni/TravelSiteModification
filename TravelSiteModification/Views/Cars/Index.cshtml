@@ -1,0 +1,125 @@
+﻿@model TravelSiteModification.Models.CarSearchViewModel
+@using Microsoft.AspNetCore.Http
+
+@{
+    ViewData["Title"] = "Car Rental Search Results";
+    var userFirstName = Context.Session.GetString("UserFirstName");
+}
+
+<div class="container py-5">
+    <h1 class="mb-4">Car Rental Search Results</h1>
+
+    <!-- Refine Search -->
+    <form asp-action="Index" method="post">
+        <div class="p-3 mb-4 border rounded-3 bg-light">
+            <h5 class="fw-bold mb-3">Refine Your Search</h5>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label asp-for="PickupLocation" class="form-label mb-0">Pickup Location</label>
+                    <select asp-for="PickupLocation" asp-items="Model.Locations" class="form-select"></select>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="DropoffLocation" class="form-label mb-0">Dropoff Location</label>
+                    <select asp-for="DropoffLocation" asp-items="Model.Locations" class="form-select"></select>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="PickupDate" class="form-label mb-0">Pickup Date</label>
+                    <input asp-for="PickupDate" type="date" class="form-control" />
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="DropoffDate" class="form-label mb-0">Dropoff Date</label>
+                    <input asp-for="DropoffDate" type="date" class="form-control" />
+                </div>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-warning">Update Search</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <p class="text-danger mt-2">@Model.ErrorMessage</p>
+            }
+        </div>
+    </form>
+
+    <!-- Search criteria message -->
+    @if (!string.IsNullOrEmpty(Model.SearchCriteriaMessage))
+    {
+        <div class="mb-3">
+            @Html.Raw(Model.SearchCriteriaMessage)
+        </div>
+    }
+
+    <hr />
+
+    <!-- Results Table -->
+    @if (Model.Results != null && Model.Results.Count > 0)
+    {
+        <table class="table table-bordered table-striped mt-4">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width:120px;">Car</th>
+                    <th>Model</th>
+                    <th>Type</th>
+                    <th class="text-end">Price/Day</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var car in Model.Results)
+                {
+                    <tr>
+                        <td class="text-center">
+                            @if (!string.IsNullOrEmpty(car.ImagePath))
+                            {
+                                <img src="@car.ImagePath" alt="@car.CarModel" class="img-thumbnail" style="width:100px;" />
+                            }
+                        </td>
+                        <td>@car.CarModel</td>
+                        <td>@car.CarType</td>
+                        <td class="text-end">@car.PricePerDay.ToString("C")</td>
+                        <td>
+                            @if (car.Available)
+                            {
+                                <span class="text-success fw-bold">Available</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger">Reserved</span>
+                            }
+                        </td>
+                        <td>
+                            @if (car.Available)
+                            {
+                                <a asp-action="Details"
+                                   asp-route-carId="@car.CarID"
+                                   asp-route-agencyId="@car.AgencyID"
+                                   class="btn btn-primary btn-sm">
+                                    View Details
+                                </a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-secondary btn-sm" disabled>Unavailable</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p class="alert alert-info mt-3">
+            @(!string.IsNullOrEmpty(Model.ErrorMessage)
+                    ? Model.ErrorMessage
+                    : "No rental cars were found matching your criteria.")
+    </p>
+        }
+</div>

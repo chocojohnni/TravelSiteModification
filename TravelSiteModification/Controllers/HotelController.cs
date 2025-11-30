@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using TravelSiteModification.Models;
 using Utilities;
 
@@ -123,7 +124,7 @@ namespace TravelSiteModification.Controllers
                 // Room availability
                 SqlCommand cmdRooms = new SqlCommand();
                 cmdRooms.CommandType = CommandType.StoredProcedure;
-                cmdRooms.CommandText = "GetAvailableRoomsByID";
+                cmdRooms.CommandText = "GetAvailableRoomsByIDRefined";
                 cmdRooms.Parameters.AddWithValue("@HotelID", id);
 
                 DataSet rds = db.GetDataSetUsingCmdObj(cmdRooms);

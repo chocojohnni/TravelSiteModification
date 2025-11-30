@@ -4,7 +4,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession();
+builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddHttpClient<EventsAPIClient>(client =>
 {
@@ -40,10 +42,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
-app.UseAuthorization();
-
 app.UseSession();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
