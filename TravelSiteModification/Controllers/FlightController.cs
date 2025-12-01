@@ -200,7 +200,7 @@ namespace TravelSiteModification.Controllers
             // Default “broad” filter values
             if (model.NonStop == false && model.FirstClass == false && model.AirlineID == 0 && model.MaxPrice == 0)
             {
-                model.NonStop = true;
+                model.NonStop = false;
                 model.FirstClass = false;
                 model.MaxPrice = 10000;
             }
@@ -213,12 +213,12 @@ namespace TravelSiteModification.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View("~/Views/Flight/Find.cshtml", model);
+                return View("Find", model);
             }
 
             if (model.AirlineID == 0)
             {
-                // 0 means no specific airline
+                //AirlineID being 0 should mean any airline here
             }
 
             if (model.MaxPrice <= 0)
@@ -234,12 +234,12 @@ namespace TravelSiteModification.Controllers
                 viewModel.Search = model;
                 viewModel.Flights = flights;
 
-                return View("~/Views/Flight/FindResults.cshtml", viewModel);
+                return View("FindResults", viewModel);
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError(String.Empty, "Error calling Flights API: " + ex.Message);
-                return View("~/Views/Flight/Find.cshtml", model);
+                return View("Find", model);
             }
         }
     }

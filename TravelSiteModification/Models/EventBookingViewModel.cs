@@ -6,7 +6,6 @@ namespace TravelSiteModification.Models
     {
         private int eventId;
         private decimal price;
-
         private string firstName;
         private string lastName;
         private string email;

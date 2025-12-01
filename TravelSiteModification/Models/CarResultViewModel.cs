@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
 
 namespace TravelSiteModification.Models
 {
-    public class CarDetailViewModel
+    public class CarResultViewModel
     {
         public int CarID { get; set; }
         public int AgencyID { get; set; }
@@ -10,12 +10,7 @@ namespace TravelSiteModification.Models
         public string CarModel { get; set; }
         public string CarType { get; set; }
         public decimal PricePerDay { get; set; }
+        public bool Available { get; set; }
         public string ImagePath { get; set; }
-
-        public string AgencyName { get; set; }
-        public string AgencyPhone { get; set; }
-        public string AgencyEmail { get; set; }
-
-        public List<CarResultViewModel> OtherAgencyCars { get; set; } = new();
     }
 }

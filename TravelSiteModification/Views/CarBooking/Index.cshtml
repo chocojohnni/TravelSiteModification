@@ -1,0 +1,126 @@
+﻿@model TravelSiteModification.Models.CarBookingViewModel
+
+@{
+    ViewData["Title"] = "Book Your Rental Car";
+}
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Book Your Rental Car</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <style>
+        .tab-content-panel {
+            border: 1px solid #dee2e6;
+            border-top: none;
+            padding: 20px;
+            border-radius: 0 0 .25rem .25rem;
+            background-color: #ffffff;
+        }
+
+        .nav-tabs-centered {
+            display: flex;
+            justify-content: center;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <form asp-action="Index" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="row">
+                <div class="col-12">
+                    <h1>Complete Your Car Rental Booking</h1>
+                    <hr />
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h2>Selected Car Details</h2>
+                    <div class="card card-body bg-light">
+                        <p class="mb-1"><strong>Model:</strong> @Model.CarModel</p>
+                        <p class="mb-1"><strong>Type:</strong> @Model.CarType</p>
+                        <p class="mb-1"><strong>Agency:</strong> @Model.AgencyName</p>
+                        <p class="mb-1"><strong>Pick-up Location:</strong> @Model.PickupLocation</p>
+                        <p class="mb-1"><strong>Drop-off Location:</strong> @Model.DropoffLocation</p>
+                        <p class="mb-1"><strong>Pick-up Date:</strong> @Model.PickupDateDisplay</p>
+                        <p class="mb-1"><strong>Drop-off Date:</strong> @Model.DropoffDateDisplay</p>
+                        <hr />
+                        <h5 class="fw-bold mb-0">Total Estimated Cost: @Model.TotalCost.ToString("C")</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h2>Driver Information</h2>
+                    <div class="form-group mb-3">
+                        <label asp-for="FirstName">First Name</label>
+                        <input asp-for="FirstName" class="form-control" />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="LastName">Last Name</label>
+                        <input asp-for="LastName" class="form-control" />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="Email">Email</label>
+                        <input asp-for="Email" type="email" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h2>Payment Details (Mock)</h2>
+                    <div class="form-group mb-3">
+                        <label asp-for="CardNumber">Card Number</label>
+                        <input asp-for="CardNumber" class="form-control" maxlength="16" />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="ExpiryDate">Expiry Date (MM/YY)</label>
+                        <input asp-for="ExpiryDate" class="form-control" maxlength="5" />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="CVV">CVV</label>
+                        <input asp-for="CVV" class="form-control" maxlength="3" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-5">
+                <div class="col-12">
+                    @if (!Model.BookingConfirmed)
+                    {
+                        <button type="submit" class="btn btn-primary btn-lg">Confirm &amp; Book Car</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-primary btn-lg" disabled>Booking Confirmed</button>
+                    }
+
+                    <span class="ms-3">
+                        @if (!string.IsNullOrEmpty(Model.StatusMessage))
+                        {
+                            @Html.Raw(Model.StatusMessage)
+                        }
+                    </span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <a asp-controller="Cars" asp-action="Index"
+                       class="btn btn-secondary" role="button">
+                        &lt; Back to Car Selection
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

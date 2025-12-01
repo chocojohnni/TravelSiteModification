@@ -3,92 +3,290 @@
     var userFirstName = ViewBag.UserFirstName;
 }
 
-<h2>Welcome to the Travel Site</h2>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-@if (userFirstName != null)
-{
-    <div class="alert alert-success">
-        Welcome, @userFirstName!
+<style>
+    /* Hero Section */
+    .hero-section {
+        background: url('https://as2.ftcdn.net/v2/jpg/03/17/05/55/1000_F_317055571_pHeS7dem8Om1CuwuQrn8emvXVsxPEp2t.jpg') no-repeat center center;
+        background-size: cover;
+        color: white;
+        padding: 80px 0;
+        text-align: center;
+        position: relative;
+        margin-bottom: 40px;
+    }
+
+        .hero-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+        }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        .hero-content p {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        }
+
+    /* Tabs */
+    .nav-tabs-centered {
+        display: flex;
+        justify-content: center;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .tab-content-panel {
+        border: 1px solid #dee2e6;
+        border-top: none;
+        padding: 20px;
+        border-radius: 0 0 .25rem .25rem;
+        background-color: #ffffff;
+        margin-bottom: 30px;
+    }
+
+    .nav-link img {
+        height: 24px;
+        width: 24px;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+</style>
+
+<!-- HERO SECTION -->
+<div class="hero-section">
+    <div class="hero-content">
+        <h1>Your Next Adventure Starts Here</h1>
+        <p>Find the best deals on hotels, flights, cars, events, and vacation packages.</p>
+
+        <a href="#travelTabs" class="btn btn-warning btn-lg fw-bold mt-3">Start Searching</a>
     </div>
-}
+</div>
 
-<hr />
+<div class="container">
 
-<h3>Search Hotels</h3>
-<form method="post" asp-action="SearchHotels">
-    <select name="destination">
-        <option value="Philadelphia">Philadelphia</option>
-        <option value="Miami">Miami</option>
-        <option value="New York">New York</option>
-        <option value="Los Angeles">Los Angeles</option>
-        <option value="Seattle">Seattle</option>
-    </select>
-    <input type="date" name="checkInDate" />
-    <input type="date" name="checkOutDate" />
-    <button type="submit">Search Hotels</button>
-</form>
+    @if (userFirstName != null)
+    {
+        <div class="alert alert-success text-center fs-5">
+            Welcome back, <strong>@userFirstName</strong>!
+        </div>
+    }
 
-<hr />
+    <!-- SEARCH TABS -->
+    <ul class="nav nav-tabs nav-tabs-centered" id="travelTabs" role="tablist">
 
-<h3>Search Flights</h3>
-<form asp-controller="Flight" asp-action="Find" method="get">
-    <select name="DepCity">
-        <option value="New York">New York</option>
-        <option value="Seattle">Seattle</option>
-    </select>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#hotels">
+                <img src="https://media.istockphoto.com/id/119926339/photo/resort-swimming-pool.jpg" />
+                Hotels
+            </button>
+        </li>
 
-    <select name="ArrCity">
-        <option value="Los Angeles">Los Angeles</option>
-        <option value="Miami">Miami</option>
-    </select>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#flights">
+                <img src="https://images.trvl-media.com/media/content/shared/images/travelguides/tvly/flight-desktop.jpg" />
+                Flights
+            </button>
+        </li>
 
-    <button type="submit">Search Flights</button>
-</form>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cars">
+                <img src="https://imageio.forbes.com/specials-images/imageserve/5d3703e2f1176b00089761a6/2020-Chevrolet-Corvette-Stingray/0x0.jpg" />
+                Cars
+            </button>
+        </li>
 
-<hr />
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#events">
+                <img src="https://capturely.com/wp-content/uploads/events-carousel-15.webp" />
+                Events
+            </button>
+        </li>
 
-<h3>Search Cars</h3>
-<form method="post" aspcontroller="Cars" asp-action="SearchCars">
-    <select name="pickupLocation">
-        <option value="Philadelphia">Philadelphia</option>
-        <option value="Miami">Miami</option>
-        <option value="New York">New York</option>
-        <option value="Los Angeles">Los Angeles</option>
-        <option value="Seattle">Seattle</option>
-    </select>
-    <select name="dropoffLocation">
-        <option value="Philadelphia">Philadelphia</option>
-        <option value="Miami">Miami</option>
-        <option value="New York">New York</option>
-        <option value="Los Angeles">Los Angeles</option>
-        <option value="Seattle">Seattle</option>
-    </select>
-    <input type="date" name="pickupDate" />
-    <input type="date" name="dropoffDate" />
-    <button type="submit">Search Cars</button>
-</form>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#packages">
+                <img src="https://forever.travel-assets.com/flex/flexmanager/images/2021/06/23/TVLY_FamilyVacationDeals_lpheroBC_1680x945_20210623.jpg" />
+                Packages
+            </button>
+        </li>
 
-<hr />
+    </ul>
 
-<h3>Search Events</h3>
-<form method="post" asp-controller="Event" asp-action="SearchEvents">
-    <input type="text" name="city" placeholder="City (e.g., Philadelphia)" />
-    <input type="text" name="state" placeholder="State (e.g., PA)" />
-    <button type="submit">Search Events</button>
-</form>
+    <!-- TAB CONTENT -->
+    <div class="tab-content tab-content-panel">
 
-<hr />
+        <!-- HOTELS TAB -->
+        <div class="tab-pane fade show active" id="hotels">
+            <h4 class="fw-bold mb-3">Search Hotels</h4>
 
-<h3>Search Vacation Packages</h3>
-<form method="post" asp-action="SearchPackages">
-    <input type="text" name="origin" placeholder="Origin" />
-    <input type="text" name="destination" placeholder="Destination" />
-    <input type="date" name="date" />
-    <button type="submit">Search Packages</button>
-</form>
+            <form method="post" asp-action="SearchHotels" class="row g-3">
 
-<hr />
+                <div class="col-md-4">
+                    <label class="form-label">Destination</label>
+                    <select class="form-select" name="destination">
+                        <option value="Philadelphia">Philadelphia</option>
+                        <option value="Miami">Miami</option>
+                        <option value="New York">New York</option>
+                        <option value="Los Angeles">Los Angeles</option>
+                        <option value="Seattle">Seattle</option>
+                    </select>
+                </div>
 
-<form method="get" asp-action="Logout">
-    <button type="submit">Logout</button>
-</form>
+                <div class="col-md-4">
+                    <label class="form-label">Check-in Date</label>
+                    <input type="date" name="checkInDate" class="form-control" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Check-out Date</label>
+                    <input type="date" name="checkOutDate" class="form-control" />
+                </div>
+
+                <div class="col-12">
+                    <button class="btn btn-primary w-100">Search Hotels</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- FLIGHTS TAB -->
+        <div class="tab-pane fade" id="flights">
+            <h4 class="fw-bold mb-3">Search Flights</h4>
+
+            <form asp-controller="Flight" asp-action="Find" method="get" class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">Departure City</label>
+                    <select class="form-select" name="DepCity">
+                        <option>New York</option>
+                        <option>Seattle</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Arrival City</label>
+                    <select class="form-select" name="ArrCity">
+                        <option>Los Angeles</option>
+                        <option>Miami</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <button class="btn btn-primary w-100">Search Flights</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- CARS TAB -->
+        <div class="tab-pane fade" id="cars">
+            <h4 class="fw-bold mb-3">Search Cars</h4>
+
+            <form method="post" asp-action="SearchCars" class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">Pickup Location</label>
+                    <select name="pickupLocation" class="form-select">
+                        <option>Philadelphia</option>
+                        <option>Miami</option>
+                        <option>New York</option>
+                        <option>Los Angeles</option>
+                        <option>Seattle</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Dropoff Location</label>
+                    <select name="dropoffLocation" class="form-select">
+                        <option>Philadelphia</option>
+                        <option>Miami</option>
+                        <option>New York</option>
+                        <option>Los Angeles</option>
+                        <option>Seattle</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Pickup Date</label>
+                    <input type="date" name="pickupDate" class="form-control" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Dropoff Date</label>
+                    <input type="date" name="dropoffDate" class="form-control" />
+                </div>
+
+                <div class="col-12">
+                    <button class="btn btn-primary w-100">Search Cars</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- EVENTS TAB -->
+        <div class="tab-pane fade" id="events">
+            <h4 class="fw-bold mb-3">Search Events</h4>
+
+            <form method="post" asp-controller="Event" asp-action="SearchEvents" class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">City</label>
+                    <input type="text" name="city" class="form-control" placeholder="City (e.g. Philadelphia)" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">State</label>
+                    <input type="text" name="state" class="form-control" placeholder="State (e.g. PA)" />
+                </div>
+
+                <div class="col-12">
+                    <button class="btn btn-primary w-100">Search Events</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- PACKAGES TAB -->
+        <div class="tab-pane fade" id="packages">
+            <h4 class="fw-bold mb-3">Search Vacation Packages</h4>
+
+            <form method="post" asp-action="SearchPackages" class="row g-3">
+
+                <div class="col-md-4">
+                    <label class="form-label">Origin</label>
+                    <input name="origin" class="form-control" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Destination</label>
+                    <input name="destination" class="form-control" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Date</label>
+                    <input type="date" name="date" class="form-control" />
+                </div>
+
+                <div class="col-12">
+                    <button class="btn btn-primary w-100">Search Packages</button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
