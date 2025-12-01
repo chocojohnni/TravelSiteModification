@@ -179,5 +179,82 @@ namespace TravelSiteModification.Controllers
             HttpContext.Session.Clear();
             return RedirectToAction("Index", "TravelSite");
         }
+
+        private int GetOrCreateOpenVacationPackage(int userId, decimal additionalCost)
+        {
+            int packageId = 0;
+
+            int? sessionPackageId = HttpContext.Session.GetInt32("CurrentPackageID");
+            if (sessionPackageId.HasValue)
+            {
+                packageId = sessionPackageId.Value;
+            }
+
+            DBConnect db = new DBConnect();
+
+            if (packageId == 0)
+            {
+                SqlCommand findCmd = new SqlCommand();
+                findCmd.CommandType = CommandType.Text;
+                findCmd.CommandText =
+                    "SELECT TOP 1 PackageID " +
+                    "FROM VacationPackage " +
+                    "WHERE UserID = @UserID AND Status = @Status " +
+                    "ORDER BY DateCreated DESC";
+
+                findCmd.Parameters.AddWithValue("@UserID", userId);
+                findCmd.Parameters.AddWithValue("@Status", "Open");
+
+                DataSet ds = db.GetDataSetUsingCmdObj(findCmd);
+
+                if (ds != null &&
+                    ds.Tables.Count > 0 &&
+                    ds.Tables[0].Rows.Count > 0)
+                {
+                    packageId = Convert.ToInt32(ds.Tables[0].Rows[0]["PackageID"]);
+                }
+            }
+
+            if (packageId == 0)
+            {
+                SqlCommand insertCmd = new SqlCommand();
+                insertCmd.CommandType = CommandType.StoredProcedure;
+                insertCmd.CommandText = "InsertVacationPackage";
+
+                insertCmd.Parameters.AddWithValue("@UserID", userId);
+                insertCmd.Parameters.AddWithValue("@PackageName", "My Vacation Package");
+                insertCmd.Parameters.AddWithValue("@StartDate", DateTime.Today);
+                insertCmd.Parameters.AddWithValue("@EndDate", DateTime.Today.AddDays(7));
+                insertCmd.Parameters.AddWithValue("@TotalCost", additionalCost);
+                insertCmd.Parameters.AddWithValue("@Status", "Open");
+
+                SqlParameter outputParam = new SqlParameter("@NewPackageID", System.Data.SqlDbType.Int);
+                outputParam.Direction = System.Data.ParameterDirection.Output;
+                insertCmd.Parameters.Add(outputParam);
+
+                db.DoUpdateUsingCmdObj(insertCmd);
+
+                packageId = Convert.ToInt32(outputParam.Value);
+            }
+            else
+            {
+                SqlCommand updateCmd = new SqlCommand();
+                updateCmd.CommandType = CommandType.Text;
+                updateCmd.CommandText =
+                    "UPDATE VacationPackage " +
+                    "SET TotalCost = ISNULL(TotalCost, 0) + @Amount " +
+                    "WHERE PackageID = @PackageID";
+
+                updateCmd.Parameters.AddWithValue("@Amount", additionalCost);
+                updateCmd.Parameters.AddWithValue("@PackageID", packageId);
+
+                db.DoUpdateUsingCmdObj(updateCmd);
+            }
+
+            HttpContext.Session.SetInt32("CurrentPackageID", packageId);
+
+            return packageId;
+        }
+
     }
 }
