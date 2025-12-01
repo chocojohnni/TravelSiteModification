@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using TravelSiteModification.Models;
 using Utilities;
 
@@ -11,173 +12,266 @@ namespace TravelSiteModification.Controllers
 {
     public class HotelController : Controller
     {
-        // "HotelDestination", "CheckInDate", "CheckOutDate", "SelectedHotelID", etc.
+        private readonly DBConnect _db;
+
+        public HotelController()
+        {
+            _db = new DBConnect();
+        }
+
+        // GET: /Hotel
+        [HttpGet]
         public IActionResult Index()
         {
-            var vm = new HotelIndexViewModel();
+            var model = new HotelSearchViewModel();
+            PopulateDestinations(model);
 
-            // Read session values
-            vm.Destination = HttpContext.Session.GetString("HotelDestination");
-            vm.CheckInDate = HttpContext.Session.GetString("CheckInDate");
-            vm.CheckOutDate = HttpContext.Session.GetString("CheckOutDate");
+            string destination = HttpContext.Session.GetString("HotelDestination");
+            string checkInStr = HttpContext.Session.GetString("CheckInDate");
+            string checkOutStr = HttpContext.Session.GetString("CheckOutDate");
 
-            if (string.IsNullOrEmpty(vm.Destination))
+            if (!string.IsNullOrEmpty(destination))
             {
-                vm.Message = "No destination selected. Please return to the home page.";
-                return View(vm);
-            }
+                model.Destination = destination;
 
-            vm.Message = $"Showing results for hotels in: {vm.Destination}";
-
-            // Load hotels from DB
-            try
-            {
-                DBConnect db = new DBConnect();
-                SqlCommand cmd = new SqlCommand();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = "GetHotelsByCityRefined";
-                cmd.Parameters.AddWithValue("@City", vm.Destination);
-
-                DataSet ds = db.GetDataSetUsingCmdObj(cmd);
-
-                if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                DateTime dt;
+                if (!string.IsNullOrEmpty(checkInStr) && DateTime.TryParse(checkInStr, out dt))
                 {
-                    foreach (DataRow row in ds.Tables[0].Rows)
-                    {
-                        var hotel = new HotelViewModel
-                        {
-                            Id = Convert.ToInt32(row["HotelID"]),
-                            Name = row["HotelName"].ToString(),
-                            ImagePath = row["ImagePath"].ToString(),
-                            Address = row["Address"].ToString(),
-                            Phone = row["Phone"].ToString(),
-                            Email = row["Email"].ToString(),
-                            Description = row["Description"].ToString()
-                        };
-                        vm.Hotels.Add(hotel);
-                    }
+                    model.CheckInDate = dt;
                 }
-                else
+                if (!string.IsNullOrEmpty(checkOutStr) && DateTime.TryParse(checkOutStr, out dt))
                 {
-                    vm.Message += " — No hotels found in this city.";
+                    model.CheckOutDate = dt;
                 }
+
+                LoadHotelResults(model);
             }
-            catch (Exception ex)
+            else
             {
-                vm.Message = $"A database error occurred. Error: {ex.Message}";
+                model.ErrorMessage = "No destination selected. Please return to the home page.";
             }
 
-            return View(vm);
+            return View(model);
         }
 
-        // POST: Hotel/ChangeDestination
+        // POST: /Hotel (refine search)
         [HttpPost]
-        public IActionResult ChangeDestination(string newDestination, string checkInDate, string checkOutDate)
+        public IActionResult Index(HotelSearchViewModel model)
         {
-            if (string.IsNullOrEmpty(newDestination))
+            PopulateDestinations(model);
+
+            if (string.IsNullOrEmpty(model.Destination))
             {
-                TempData["DestinationError"] = "Please select a valid destination.";
+                model.ErrorMessage = "Please select a valid destination.";
+                model.Results = new List<HotelResultViewModel>();
+                return View(model);
+            }
+
+            // Save to session
+            HttpContext.Session.SetString("HotelDestination", model.Destination ?? "");
+
+            if (model.CheckInDate.HasValue)
+            {
+                HttpContext.Session.SetString("CheckInDate", model.CheckInDate.Value.ToString("yyyy-MM-dd"));
+            }
+
+            if (model.CheckOutDate.HasValue)
+            {
+                HttpContext.Session.SetString("CheckOutDate", model.CheckOutDate.Value.ToString("yyyy-MM-dd"));
+            }
+
+            LoadHotelResults(model);
+
+            return View(model);
+        }
+
+        // GET: /Hotel/Details/{hotelId}
+        [HttpGet]
+        public IActionResult Details(int hotelId)
+        {
+            var model = new HotelDetailsViewModel();
+
+            LoadHotelDetails(hotelId, model);
+            LoadRoomAvailability(hotelId, model);
+
+            // Pull dates from session for display
+            string checkInStr = HttpContext.Session.GetString("CheckInDate");
+            string checkOutStr = HttpContext.Session.GetString("CheckOutDate");
+            DateTime dt;
+
+            if (!string.IsNullOrEmpty(checkInStr) && DateTime.TryParse(checkInStr, out dt))
+            {
+                model.CheckInDate = dt;
+            }
+            if (!string.IsNullOrEmpty(checkOutStr) && DateTime.TryParse(checkOutStr, out dt))
+            {
+                model.CheckOutDate = dt;
+            }
+
+            if (model.HotelID == 0)
+            {
+                TempData["HotelError"] = "Hotel not found.";
                 return RedirectToAction("Index");
             }
 
-            HttpContext.Session.SetString("HotelDestination", newDestination);
-            HttpContext.Session.SetString("CheckInDate", checkInDate);
-            HttpContext.Session.SetString("CheckOutDate", checkOutDate);
-
-            return RedirectToAction("Index");
+            return View(model);
         }
 
-        // GET: Hotel/Details/5
-        public IActionResult Details(int id)
+        // ----------------- Helpers -----------------
+
+        private void PopulateDestinations(HotelSearchViewModel model)
         {
-            var hotel = new HotelViewModel();
-            var rooms = new List<RoomViewModel>();
+            model.Destinations = new List<SelectListItem>();
+
+            model.Destinations.Add(new SelectListItem { Text = "-- Select Destination --", Value = "" });
+            model.Destinations.Add(new SelectListItem { Text = "New York, NY", Value = "New York" });
+            model.Destinations.Add(new SelectListItem { Text = "Los Angeles, CA", Value = "Los Angeles" });
+            model.Destinations.Add(new SelectListItem { Text = "Miami, FL", Value = "Miami" });
+            model.Destinations.Add(new SelectListItem { Text = "Seattle, WA", Value = "Seattle" });
+        }
+
+        private void LoadHotelResults(HotelSearchViewModel model)
+        {
+            if (string.IsNullOrEmpty(model.Destination))
+            {
+                model.ErrorMessage = "No destination selected. Please return to the home page.";
+                model.Results = new List<HotelResultViewModel>();
+                return;
+            }
+
+            model.SearchCriteriaMessage =
+                $"<p class='fs-5'>Showing results for hotels in: <strong>{model.Destination}</strong></p>";
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "GetHotelsByCity";
+            cmd.Parameters.AddWithValue("@City", model.Destination);
 
             try
             {
-                DBConnect db = new DBConnect();
+                DataSet ds = _db.GetDataSetUsingCmdObj(cmd);
+                List<HotelResultViewModel> results = new List<HotelResultViewModel>();
 
-                // Hotel details
-                SqlCommand cmd = new SqlCommand();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = "GetHotelsByIDRefined";
-                cmd.Parameters.AddWithValue("@HotelID", id);
-
-                DataSet ds = db.GetDataSetUsingCmdObj(cmd);
-                if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                if (ds != null && ds.Tables.Count > 0)
                 {
-                    var row = ds.Tables[0].Rows[0];
-                    hotel.Id = Convert.ToInt32(row["HotelID"]);
-                    hotel.Name = row["HotelName"].ToString();
-                    hotel.ImagePath = row["ImagePath"].ToString();
-                    hotel.Address = row["Address"].ToString();
-                    hotel.Phone = row["Phone"].ToString();
-                    hotel.Email = row["Email"].ToString();
-                    hotel.Description = row["Description"].ToString();
-                }
-                else
-                {
-                    TempData["Error"] = "Hotel not found.";
-                    return RedirectToAction("Index");
-                }
-
-                // Room availability
-                SqlCommand cmdRooms = new SqlCommand();
-                cmdRooms.CommandType = CommandType.StoredProcedure;
-                cmdRooms.CommandText = "GetAvailableRoomsByIDRefined";
-                cmdRooms.Parameters.AddWithValue("@HotelID", id);
-
-                DataSet rds = db.GetDataSetUsingCmdObj(cmdRooms);
-                if (rds != null && rds.Tables.Count > 0 && rds.Tables[0].Rows.Count > 0)
-                {
-                    foreach (DataRow r in rds.Tables[0].Rows)
+                    DataTable table = ds.Tables[0];
+                    int i;
+                    for (i = 0; i < table.Rows.Count; i++)
                     {
-                        rooms.Add(new RoomViewModel
-                        {
-                            Id = Convert.ToInt32(r["RoomID"]),
-                            RoomName = Convert.ToString(r["RoomName"]),
-                            Description = Convert.ToString(r["Description"]),
-                            Price = Convert.ToDecimal(r["Price"]),
-                            MaxOccupancy = Convert.ToInt32(r["MaxOccupancy"])
-                        });
+                        DataRow row = table.Rows[i];
+                        HotelResultViewModel hotel = new HotelResultViewModel();
 
+                        hotel.HotelID = Convert.ToInt32(row["HotelID"]);
+                        hotel.HotelName = row["HotelName"].ToString();
+                        hotel.City = row["City"].ToString();
+                        hotel.Description = row["Description"].ToString();
+
+                        if (row["Rating"] != DBNull.Value)
+                        {
+                            hotel.Rating = Convert.ToDecimal(row["Rating"]);
+                        }
+
+                        if (row["PricePerNight"] != DBNull.Value)
+                        {
+                            hotel.PricePerNight = Convert.ToDecimal(row["PricePerNight"]);
+                        }
+
+                        hotel.ImagePath = row["ImagePath"].ToString();
+
+                        results.Add(hotel);
                     }
                 }
 
-                // store selected hotel
-                HttpContext.Session.SetInt32("SelectedHotelID", id);
+                if (results.Count == 0)
+                {
+                    model.ErrorMessage = "No hotels were found matching your criteria.";
+                }
+
+                model.Results = results;
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"Error loading hotel details: {ex.Message}";
-                return RedirectToAction("Index");
+                model.ErrorMessage = "A database error occurred. Error: " + ex.Message;
+                model.Results = new List<HotelResultViewModel>();
             }
-
-            // prepare view bag with checkin/checkout
-            ViewBag.CheckInDate = HttpContext.Session.GetString("CheckInDate");
-            ViewBag.CheckOutDate = HttpContext.Session.GetString("CheckOutDate");
-
-            ViewBag.Rooms = rooms;
-            return View(hotel);
         }
 
-        // POST: Hotel/SelectRoom
-        [HttpPost]
-        public IActionResult SelectRoom(int roomId, string checkInDate, string checkOutDate)
+        private void LoadHotelDetails(int hotelId, HotelDetailsViewModel model)
         {
-            // store selected room and dates and redirect to booking page
-            HttpContext.Session.SetInt32("SelectedRoomID", roomId);
-            HttpContext.Session.SetString("CheckInDate", checkInDate);
-            HttpContext.Session.SetString("CheckOutDate", checkOutDate);
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "GetHotelsByID";
+            cmd.Parameters.AddWithValue("@HotelID", hotelId);
 
-            // Redirect to HotelBooking controller
-            return RedirectToAction("Index", "HotelBooking");
+            try
+            {
+                DataSet ds = _db.GetDataSetUsingCmdObj(cmd);
+
+                if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                {
+                    DataRow row = ds.Tables[0].Rows[0];
+
+                    model.HotelID = hotelId;
+                    model.HotelName = row["HotelName"].ToString();
+                    model.ImagePath = row["ImagePath"].ToString();
+                    model.Address = row["Address"].ToString();
+                    model.Phone = row["Phone"].ToString();
+                    model.Email = row["Email"].ToString();
+                    model.Description = row["Description"].ToString();
+                }
+            }
+            catch
+            {
+                // If error, we leave HotelID = 0 so caller can handle
+            }
         }
 
-        public IActionResult Logout()
+        private void LoadRoomAvailability(int hotelId, HotelDetailsViewModel model)
         {
-            HttpContext.Session.Clear();
-            return RedirectToAction("Index", "TravelSite");
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "GetAvailableRoomsByID";
+            cmd.Parameters.AddWithValue("@HotelID", hotelId);
+
+            try
+            {
+                DataSet ds = _db.GetDataSetUsingCmdObj(cmd);
+                List<RoomViewModel> rooms = new List<RoomViewModel>();
+
+                if (ds != null && ds.Tables.Count > 0)
+                {
+                    DataTable table = ds.Tables[0];
+                    int i;
+                    for (i = 0; i < table.Rows.Count; i++)
+                    {
+                        DataRow row = table.Rows[i];
+                        RoomViewModel room = new RoomViewModel();
+
+                        room.RoomID = Convert.ToInt32(row["RoomID"]);
+                        room.RoomType = row["RoomType"].ToString();
+
+                        if (row["Capacity"] != DBNull.Value)
+                        {
+                            room.Capacity = Convert.ToInt32(row["Capacity"]);
+                        }
+
+                        if (row["Price"] != DBNull.Value)
+                        {
+                            room.Price = Convert.ToDecimal(row["Price"]);
+                        }
+
+                        room.ImagePath = row["ImagePath"].ToString();
+
+                        rooms.Add(room);
+                    }
+                }
+
+                model.Rooms = rooms;
+            }
+            catch
+            {
+                model.Rooms = new List<RoomViewModel>();
+            }
         }
     }
 }
