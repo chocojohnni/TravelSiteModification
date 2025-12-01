@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Data;
 using System.Data.SqlClient;
@@ -9,146 +10,141 @@ namespace TravelSiteModification.Controllers
 {
     public class HotelBookingController : Controller
     {
-        // GET: /HotelBooking/Index
-        public IActionResult Index()
-        {
-            int? hotelId = HttpContext.Session.GetInt32("SelectedHotelID");
-            int? roomId = HttpContext.Session.GetInt32("SelectedRoomID");
+        private readonly DBConnect db;
 
-            if (hotelId == null || roomId == null)
+        public HotelBookingController()
+        {
+            db = new DBConnect();
+        }
+
+        // GET: /HotelBooking?hotelId=3&roomId=12
+        [HttpGet]
+        public IActionResult Index(int hotelId, int roomId)
+        {
+            // Require login
+            if (HttpContext.Session.GetInt32("UserID") == null)
             {
-                TempData["Error"] = "Missing hotel or room selection.";
-                return RedirectToAction("Index", "Hotel");
+                HttpContext.Session.SetString("RedirectAfterLogin", $"/HotelBooking?hotelId={hotelId}&roomId={roomId}");
+                return RedirectToAction("Login", "Account");
             }
 
-            string checkIn = HttpContext.Session.GetString("CheckInDate");
-            string checkOut = HttpContext.Session.GetString("CheckOutDate");
+            var model = new HotelBookingViewModel
+            {
+                HotelID = hotelId,
+                RoomID = roomId
+            };
 
-            var booking = new HotelBookingViewModel();
+            // Load booking details
+            LoadBookingDetails(model);
+
+            // Load session dates
+            model.CheckInDate = HttpContext.Session.GetString("CheckInDate");
+            model.CheckOutDate = HttpContext.Session.GetString("CheckOutDate");
+
+            return View(model);
+        }
+
+        private void LoadBookingDetails(HotelBookingViewModel model)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "GetBookingDetailsByHotelAndRoom";
+            cmd.Parameters.AddWithValue("@HotelID", model.HotelID);
+            cmd.Parameters.AddWithValue("@RoomID", model.RoomID);
+
+            DataSet ds = db.GetDataSetUsingCmdObj(cmd);
+
+            if (ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0)
+                return;
+
+            DataRow row = ds.Tables[0].Rows[0];
+
+            model.HotelName = row["HotelName"].ToString();
+            model.RoomType = row["RoomType"].ToString();
+            model.Capacity = row["Capacity"].ToString();
+            model.PricePerNight = Convert.ToDecimal(row["Price"]);
+        }
+
+        // POST — insert booking
+        [HttpPost]
+        public IActionResult Index(HotelBookingViewModel model)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserID");
+
+            if (userId == null)
+            {
+                model.StatusMessage = "User not logged in.";
+                return View(model);
+            }
+
+            if (string.IsNullOrWhiteSpace(model.FirstName) ||
+                string.IsNullOrWhiteSpace(model.Email))
+            {
+                model.StatusMessage = "Please enter all required guest information.";
+                return View(model);
+            }
+
+            string result = InsertBooking(model, userId.Value);
+
+            if (result == "Success")
+            {
+                model.BookingSuccessful = true;
+                model.StatusMessage = "Booking Confirmed! A confirmation email has been sent.";
+
+                // Clear booking data
+                HttpContext.Session.Remove("SelectedHotelID");
+                HttpContext.Session.Remove("SelectedRoomID");
+                HttpContext.Session.Remove("RoomPrice");
+            }
+            else
+            {
+                model.StatusMessage = result;
+            }
+
+            return View(model);
+        }
+
+        private string InsertBooking(HotelBookingViewModel model, int userId)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "AddHotelBooking";
+
+            cmd.Parameters.AddWithValue("@HotelID", model.HotelID);
+            cmd.Parameters.AddWithValue("@RoomID", model.RoomID);
+            cmd.Parameters.AddWithValue("@FirstName", model.FirstName);
+            cmd.Parameters.AddWithValue("@LastName", model.LastName ?? "");
+            cmd.Parameters.AddWithValue("@Email", model.Email);
+            cmd.Parameters.AddWithValue("@BookingDate", DateTime.Now);
+            cmd.Parameters.AddWithValue("@TotalPrice", model.PricePerNight);
+            cmd.Parameters.AddWithValue("@Status", "Pending");
+            cmd.Parameters.AddWithValue("@UserID", userId);
+
+            if (!string.IsNullOrEmpty(model.CheckInDate))
+                cmd.Parameters.AddWithValue("@CheckInDate", Convert.ToDateTime(model.CheckInDate));
+            else
+                cmd.Parameters.AddWithValue("@CheckInDate", DBNull.Value);
+
+            if (!string.IsNullOrEmpty(model.CheckOutDate))
+                cmd.Parameters.AddWithValue("@CheckOutDate", Convert.ToDateTime(model.CheckOutDate));
+            else
+                cmd.Parameters.AddWithValue("@CheckOutDate", DBNull.Value);
 
             try
             {
-                DBConnect db = new DBConnect();
-
-                // Retrieve hotel details
-                SqlCommand hotelCmd = new SqlCommand();
-                hotelCmd.CommandType = CommandType.StoredProcedure;
-                hotelCmd.CommandText = "GetHotelsByID";
-                hotelCmd.Parameters.AddWithValue("@HotelID", hotelId);
-
-                DataSet hds = db.GetDataSetUsingCmdObj(hotelCmd);
-                if (hds.Tables.Count > 0 && hds.Tables[0].Rows.Count > 0)
-                {
-                    var row = hds.Tables[0].Rows[0];
-                    booking.HotelName = row["HotelName"].ToString();
-                    booking.HotelAddress = row["Address"].ToString();
-                    booking.HotelPhone = row["Phone"].ToString();
-                    booking.HotelEmail = row["Email"].ToString();
-                }
-
-                // Retrieve room details
-                SqlCommand roomCmd = new SqlCommand();
-                roomCmd.CommandType = CommandType.StoredProcedure;
-                roomCmd.CommandText = "GetRoomByID";  
-                roomCmd.Parameters.AddWithValue("@RoomID", roomId);
-
-                DataSet rds = db.GetDataSetUsingCmdObj(roomCmd);
-                if (rds.Tables.Count > 0 && rds.Tables[0].Rows.Count > 0)
-                {
-                    var row = rds.Tables[0].Rows[0];
-                    booking.RoomType = row["RoomType"].ToString();
-                    booking.PricePerNight = Convert.ToDecimal(row["Price"]);
-                }
-
-                booking.CheckInDate = checkIn;
-                booking.CheckOutDate = checkOut;
-
-                // Calculate total nights
-                if (DateTime.TryParse(checkIn, out DateTime ci) &&
-                    DateTime.TryParse(checkOut, out DateTime co))
-                {
-                    booking.TotalNights = (co - ci).Days;
-                    booking.TotalPrice = booking.TotalNights * booking.PricePerNight;
-                }
+                db.DoUpdateUsingCmdObj(cmd);
+                return "Success";
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Error loading booking info: " + ex.Message;
-                return RedirectToAction("Index", "Hotel");
+                return $"Database Error: {ex.Message}";
             }
-
-            return View(booking);
         }
 
-        // POST: HotelBooking/Confirm
-        [HttpPost]
-        public IActionResult ConfirmBooking(HotelBookingViewModel model)
+        // Back button
+        public IActionResult Back(int hotelId)
         {
-            int? hotelId = HttpContext.Session.GetInt32("SelectedHotelID");
-            int? roomId = HttpContext.Session.GetInt32("SelectedRoomID");
-            string checkIn = HttpContext.Session.GetString("CheckInDate");
-            string checkOut = HttpContext.Session.GetString("CheckOutDate");
-
-            if (hotelId == null || roomId == null)
-            {
-                TempData["Error"] = "Missing booking information.";
-                return RedirectToAction("Index", "Hotel");
-            }
-
-            try
-            {
-                DBConnect db = new DBConnect();
-
-                SqlCommand cmd = new SqlCommand();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = "InsertHotelBooking";
-
-                cmd.Parameters.AddWithValue("@HotelID", hotelId);
-                cmd.Parameters.AddWithValue("@RoomID", roomId);
-                cmd.Parameters.AddWithValue("@CheckInDate", checkIn);
-                cmd.Parameters.AddWithValue("@CheckOutDate", checkOut);
-                cmd.Parameters.AddWithValue("@TotalAmount", model.TotalPrice);
-                cmd.Parameters.AddWithValue("@FirstName", model.FirstName);
-                cmd.Parameters.AddWithValue("@LastName", model.LastName);
-                cmd.Parameters.AddWithValue("@Email", model.Email);
-
-                int result = db.DoUpdateUsingCmdObj(cmd);
-
-                if (result > 0)
-                {
-                    TempData["Success"] = "Booking confirmed!";
-                    return RedirectToAction("Receipt");
-                }
-                else
-                {
-                    TempData["Error"] = "Booking failed.";
-                }
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Booking error: " + ex.Message;
-            }
-
-            return RedirectToAction("Index");
-        }
-
-        [HttpPost]
-        public IActionResult SelectRoom(int roomId, string checkInDate, string checkOutDate)
-        {
-            // Store selected room + dates in session
-            HttpContext.Session.SetInt32("SelectedRoomID", roomId);
-            HttpContext.Session.SetString("CheckInDate", checkInDate);
-            HttpContext.Session.SetString("CheckOutDate", checkOutDate);
-
-            // Redirect user to the booking page
-            return RedirectToAction("Index", "HotelBooking");
-        }
-
-
-        // GET: HotelBooking/Receipt
-        public IActionResult Receipt()
-        {
-            return View();
+            return RedirectToAction("Details", "Hotel", new { id = hotelId });
         }
     }
 }

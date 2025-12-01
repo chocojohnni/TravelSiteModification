@@ -1,79 +1,107 @@
-﻿@model TravelSiteModification.Models.HotelIndexViewModel
+﻿@model TravelSiteModification.Models.HotelSearchViewModel
+
 @{
-    ViewData["Title"] = "Hotels";
+    ViewData["Title"] = "Hotel Search Results";
 }
 
-<h2>Hotels</h2>
+<div class="container py-5">
+    <h1 class="mb-4">Hotel Search Results</h1>
 
-@if (!string.IsNullOrEmpty(Model.Message))
-{
-    <div class="mb-2">@Html.Raw(Model.Message)</div>
-}
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage) && (Model.Results == null || Model.Results.Count == 0))
+    {
+        <div class="alert alert-warning">@Model.ErrorMessage</div>
+    }
 
-@if (TempData["DestinationError"] != null)
-{
-    <div class="text-danger mb-2">@TempData["DestinationError"]</div>
-}
+    <!-- Refine Search -->
+    <form asp-action="Index" method="post">
+        <div class="p-3 mb-4 border rounded-3 bg-light">
+            <h5 class="fw-bold mb-3">Refine Your Search</h5>
 
-<form asp-action="ChangeDestination" method="post" class="mb-3 row g-2">
-    <div class="col-auto">
-        <label class="form-label">Destination</label>
-        <select name="newDestination" class="form-select">
-            <option value="">-- Select --</option>
-            <option value="Philadelphia">Philadelphia</option>
-            <option value="New York">New York</option>
-            <option value="Los Angeles">Los Angeles</option>
-            <option value="Seattle">Seattle</option>
-            <option value="Miami">Miami</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <label class="form-label">Check-in</label>
-        <input type="date" name="checkInDate" class="form-control" value="@Model.CheckInDate" />
-    </div>
-    <div class="col-auto">
-        <label class="form-label">Check-out</label>
-        <input type="date" name="checkOutDate" class="form-control" value="@Model.CheckOutDate" />
-    </div>
-    <div class="col-auto align-self-end">
-        <button class="btn btn-primary">Change Destination</button>
-    </div>
-</form>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label mb-0" for="Destination">Destination City/State</label>
+                    <select asp-for="Destination" asp-items="Model.Destinations" class="form-select"></select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-0" asp-for="CheckInDate">Check-in Date</label>
+                    <input asp-for="CheckInDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-0" asp-for="CheckOutDate">Check-out Date</label>
+                    <input asp-for="CheckOutDate" type="date" class="form-control" />
+                </div>
+            </div>
 
-@if (Model.Hotels == null || Model.Hotels.Count == 0)
-{
-    <div class="alert alert-info">No hotels to show.</div>
-}
-else
-{
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th></th>
-                <th>Hotel</th>
-                <th>Address</th>
-                <th>Phone</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var h in Model.Hotels)
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6 text-end">
+                    <button type="submit" class="btn btn-warning">Update Search</button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage) && Model.Results != null && Model.Results.Count > 0)
             {
-                <tr>
-                    <td>
-                        @if (!string.IsNullOrEmpty(h.ImagePath))
-                        {
-                            <img src="@h.ImagePath" alt="@h.Name" style="width:100px;height:auto" />
-                        }
-                    </td>
-                    <td>@h.Name</td>
-                    <td>@h.Address</td>
-                    <td>@h.Phone</td>
-                    <td>
-                        <a asp-action="Details" asp-route-id="@h.Id" class="btn btn-sm btn-outline-primary">View Rooms</a>
-                    </td>
-                </tr>
+                <p class="text-danger mt-2">@Model.ErrorMessage</p>
             }
-        </tbody>
-    </table>
-}
+        </div>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.SearchCriteriaMessage))
+    {
+        <div class="mb-3">
+            @Html.Raw(Model.SearchCriteriaMessage)
+        </div>
+    }
+
+    <hr />
+
+    @if (Model.Results != null && Model.Results.Count > 0)
+    {
+        <table class="table table-bordered table-striped mt-4">
+            <thead class="table-dark">
+                <tr>
+                    <th>Hotel</th>
+                    <th>Description</th>
+                    <th>Rating</th>
+                    <th class="text-end">Price/Night</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var hotel in Model.Results)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                @if (!string.IsNullOrEmpty(hotel.ImagePath))
+                                {
+                                    <img src="@hotel.ImagePath"
+                                         alt="@hotel.HotelName"
+                                         height="100" width="160"
+                                         class="me-3 rounded" />
+                                }
+                                <div>
+                                    <h5 class="fw-bold mb-0">@hotel.HotelName</h5>
+                                    <span class="text-muted">@hotel.City</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="width:300px;">@hotel.Description</td>
+                        <td>@(hotel.Rating.HasValue? hotel.Rating.Value.ToString("0.0") : "N/A")</td>
+                        <td class="text-end">@hotel.PricePerNight.ToString("C")</td>
+                        <td>
+                            <a asp-action="Details"
+                               asp-route-hotelId="@hotel.HotelID"
+                               class="btn btn-success btn-sm">
+                                View Rooms
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else if (string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <p class="alert alert-info mt-3">No hotels were found matching your criteria.</p>
+    }
+</div>
