@@ -19,11 +19,10 @@ namespace TravelSiteModification.Controllers
             _db = new DBConnect();
         }
 
-        // GET: /Hotel
         [HttpGet]
         public IActionResult Index()
         {
-            var model = new HotelSearchViewModel();
+            HotelSearchViewModel model = new HotelSearchViewModel();
             PopulateDestinations(model);
 
             string destination = HttpContext.Session.GetString("HotelDestination");
@@ -54,7 +53,6 @@ namespace TravelSiteModification.Controllers
             return View(model);
         }
 
-        // POST: /Hotel (refine search)
         [HttpPost]
         public IActionResult Index(HotelSearchViewModel model)
         {
@@ -67,7 +65,7 @@ namespace TravelSiteModification.Controllers
                 return View(model);
             }
 
-            // Save to session
+            // Save new search values to session
             HttpContext.Session.SetString("HotelDestination", model.Destination ?? "");
 
             if (model.CheckInDate.HasValue)
@@ -85,18 +83,18 @@ namespace TravelSiteModification.Controllers
             return View(model);
         }
 
-        // GET: /Hotel/Details/{hotelId}
         [HttpGet]
         public IActionResult Details(int hotelId)
         {
-            var model = new HotelDetailsViewModel();
+            HotelDetailsViewModel model = new HotelDetailsViewModel();
 
             LoadHotelDetails(hotelId, model);
             LoadRoomAvailability(hotelId, model);
 
-            // Pull dates from session for display
+            // pull dates from session
             string checkInStr = HttpContext.Session.GetString("CheckInDate");
             string checkOutStr = HttpContext.Session.GetString("CheckOutDate");
+
             DateTime dt;
 
             if (!string.IsNullOrEmpty(checkInStr) && DateTime.TryParse(checkInStr, out dt))
@@ -116,8 +114,6 @@ namespace TravelSiteModification.Controllers
 
             return View(model);
         }
-
-        // ----------------- Helpers -----------------
 
         private void PopulateDestinations(HotelSearchViewModel model)
         {
@@ -140,7 +136,9 @@ namespace TravelSiteModification.Controllers
             }
 
             model.SearchCriteriaMessage =
-                $"<p class='fs-5'>Showing results for hotels in: <strong>{model.Destination}</strong></p>";
+                "<p class='fs-5'>Showing results for hotels in: <strong>" +
+                model.Destination +
+                "</strong></p>";
 
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
@@ -155,26 +153,23 @@ namespace TravelSiteModification.Controllers
                 if (ds != null && ds.Tables.Count > 0)
                 {
                     DataTable table = ds.Tables[0];
+
                     int i;
                     for (i = 0; i < table.Rows.Count; i++)
                     {
                         DataRow row = table.Rows[i];
-                        HotelResultViewModel hotel = new HotelResultViewModel();
 
+                        HotelResultViewModel hotel = new HotelResultViewModel();
                         hotel.HotelID = Convert.ToInt32(row["HotelID"]);
                         hotel.HotelName = row["HotelName"].ToString();
                         hotel.City = row["City"].ToString();
                         hotel.Description = row["Description"].ToString();
 
                         if (row["Rating"] != DBNull.Value)
-                        {
                             hotel.Rating = Convert.ToDecimal(row["Rating"]);
-                        }
 
                         if (row["PricePerNight"] != DBNull.Value)
-                        {
                             hotel.PricePerNight = Convert.ToDecimal(row["PricePerNight"]);
-                        }
 
                         hotel.ImagePath = row["ImagePath"].ToString();
 
@@ -218,14 +213,34 @@ namespace TravelSiteModification.Controllers
                     model.Phone = row["Phone"].ToString();
                     model.Email = row["Email"].ToString();
                     model.Description = row["Description"].ToString();
+
+                    model.GalleryImages = new List<string>();
+
+                    if (!string.IsNullOrEmpty(model.ImagePath))
+                    {
+                        model.GalleryImages.Add(model.ImagePath);
+
+                        string extension = System.IO.Path.GetExtension(model.ImagePath);
+                        string prefix = model.ImagePath.Replace(extension, "");
+
+                        model.GalleryImages.Add(prefix + "_2" + extension);
+                        model.GalleryImages.Add(prefix + "_3" + extension);
+                    }
+                    else
+                    {
+                        model.GalleryImages.Add("/images/hotels/default1.jpg");
+                        model.GalleryImages.Add("/images/hotels/default2.jpg");
+                        model.GalleryImages.Add("/images/hotels/default3.jpg");
+                    }
                 }
             }
             catch
             {
-                // If error, we leave HotelID = 0 so caller can handle
+                model.HotelID = 0;
             }
         }
 
+        // ======================== ROOM AVAILABILITY ========================
         private void LoadRoomAvailability(int hotelId, HotelDetailsViewModel model)
         {
             SqlCommand cmd = new SqlCommand();
@@ -241,26 +256,22 @@ namespace TravelSiteModification.Controllers
                 if (ds != null && ds.Tables.Count > 0)
                 {
                     DataTable table = ds.Tables[0];
+
                     int i;
                     for (i = 0; i < table.Rows.Count; i++)
                     {
                         DataRow row = table.Rows[i];
-                        RoomViewModel room = new RoomViewModel();
 
+                        RoomViewModel room = new RoomViewModel();
                         room.RoomID = Convert.ToInt32(row["RoomID"]);
                         room.RoomType = row["RoomType"].ToString();
+                        room.ImagePath = row["ImagePath"].ToString();
 
                         if (row["Capacity"] != DBNull.Value)
-                        {
                             room.Capacity = Convert.ToInt32(row["Capacity"]);
-                        }
 
                         if (row["Price"] != DBNull.Value)
-                        {
                             room.Price = Convert.ToDecimal(row["Price"]);
-                        }
-
-                        room.ImagePath = row["ImagePath"].ToString();
 
                         rooms.Add(room);
                     }
@@ -349,6 +360,5 @@ namespace TravelSiteModification.Controllers
 
             return packageId;
         }
-
     }
 }

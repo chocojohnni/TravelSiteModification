@@ -15,20 +15,17 @@ namespace TravelSiteModification.Controllers
         {
             CarSearchViewModel model = BuildBaseSearchModel();
 
-            // Load session values set by SearchCars in TravelSiteController
             model.PickupLocation = HttpContext.Session.GetString("CarPickupLocation");
             model.DropoffLocation = HttpContext.Session.GetString("CarDropoffLocation");
             model.PickupDate = HttpContext.Session.GetString("CarPickupDate");
             model.DropoffDate = HttpContext.Session.GetString("CarDropoffDate");
 
-            // Validate
             if (string.IsNullOrEmpty(model.PickupLocation) || string.IsNullOrEmpty(model.DropoffLocation))
             {
                 model.ErrorMessage = "No locations selected. Please return to the home page.";
                 return View(model);
             }
 
-            // Get cars
             model.Results = GetCarsByPickupAndDropoff(model.PickupLocation, model.DropoffLocation);
 
             model.SearchCriteriaMessage =
@@ -46,7 +43,7 @@ namespace TravelSiteModification.Controllers
             return View(model);
         }
 
-        // POST: Update Search
+        // POST: Update search
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Index(CarSearchViewModel model)
@@ -67,7 +64,6 @@ namespace TravelSiteModification.Controllers
                 return View(newModel);
             }
 
-            // Validate date order
             System.DateTime pickup;
             System.DateTime dropoff;
 
@@ -83,13 +79,11 @@ namespace TravelSiteModification.Controllers
                 }
             }
 
-            // Save to Session
             HttpContext.Session.SetString("CarPickupLocation", model.PickupLocation);
             HttpContext.Session.SetString("CarDropoffLocation", model.DropoffLocation);
             HttpContext.Session.SetString("CarPickupDate", model.PickupDate);
             HttpContext.Session.SetString("CarDropoffDate", model.DropoffDate);
 
-            // Query
             newModel.Results = GetCarsByPickupAndDropoff(model.PickupLocation, model.DropoffLocation);
 
             newModel.SearchCriteriaMessage =
@@ -122,7 +116,8 @@ namespace TravelSiteModification.Controllers
             return View(model);
         }
 
-        // Helpers
+        // ---------------------- Helpers ----------------------
+
         private CarSearchViewModel BuildBaseSearchModel()
         {
             CarSearchViewModel model = new CarSearchViewModel();
@@ -162,7 +157,6 @@ namespace TravelSiteModification.Controllers
             return model;
         }
 
-
         private string FormatCity(string code)
         {
             if (code == "NYC") return "New York, NY";
@@ -171,7 +165,6 @@ namespace TravelSiteModification.Controllers
             if (code == "SEA") return "Seattle, WA";
             return code;
         }
-
 
         private List<CarResultViewModel> GetCarsByPickupAndDropoff(string pickup, string dropoff)
         {
@@ -213,14 +206,12 @@ namespace TravelSiteModification.Controllers
             return list;
         }
 
-
         private CarDetailViewModel GetCarDetail(int carId, int agencyId)
         {
             DBConnect db = new DBConnect();
             SqlCommand cmd = new SqlCommand();
             CarDetailViewModel model = null;
 
-            // First query — car + agency info
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "GetCarAndAgencyDetails";
             cmd.Parameters.AddWithValue("@CarID", carId);
@@ -251,9 +242,30 @@ namespace TravelSiteModification.Controllers
                 return null;
             }
 
-            // Second query — other cars From agency
-            DBConnect db2 = new DBConnect();
+            // GALLERY LOGIC
+            model.GalleryImages = new List<string>();
+
+            if (!string.IsNullOrEmpty(model.ImagePath))
+            {
+                model.GalleryImages.Add(model.ImagePath);
+
+                string extension = System.IO.Path.GetExtension(model.ImagePath);
+                string prefix = model.ImagePath.Replace(extension, "");
+
+                model.GalleryImages.Add(prefix + "_2" + extension);
+                model.GalleryImages.Add(prefix + "_3" + extension);
+            }
+            else
+            {
+                model.GalleryImages.Add("/images/cars/default1.jpg");
+                model.GalleryImages.Add("/images/cars/default2.jpg");
+                model.GalleryImages.Add("/images/cars/default3.jpg");
+            }
+
+
+            // Query other agency cars
             SqlCommand cmd2 = new SqlCommand();
+            DBConnect db2 = new DBConnect();
 
             cmd2.CommandType = CommandType.StoredProcedure;
             cmd2.CommandText = "GetOtherAvailableCarsByAgencyID";
@@ -277,7 +289,7 @@ namespace TravelSiteModification.Controllers
                     car.CarModel = row["CarModel"].ToString();
                     car.CarType = row["CarType"].ToString();
                     car.PricePerDay = decimal.Parse(row["PricePerDay"].ToString());
-                    car.Available = true; // by definition
+                    car.Available = true;
                     car.ImagePath = row["ImagePath"].ToString();
 
                     model.OtherAgencyCars.Add(car);
@@ -290,7 +302,7 @@ namespace TravelSiteModification.Controllers
         }
 
         private int GetOrCreateOpenVacationPackage(int userId, decimal additionalCost)
-        {
+            {
             int packageId = 0;
 
             int? sessionPackageId = HttpContext.Session.GetInt32("CurrentPackageID");
