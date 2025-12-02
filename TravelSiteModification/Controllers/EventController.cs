@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Data.SqlClient;
 using TravelSiteModification.Services;
@@ -226,7 +226,7 @@ namespace TravelSiteModification.Controllers
                 packageId = sessionPackageId.Value;
             }
 
-            DBConnect db = new DBConnect();
+            DBConnect dbConnect = new DBConnect();
 
             if (packageId == 0)
             {
@@ -239,9 +239,9 @@ namespace TravelSiteModification.Controllers
                     "ORDER BY DateCreated DESC";
 
                 findCmd.Parameters.AddWithValue("@UserID", userId);
-                findCmd.Parameters.AddWithValue("@Status", "Open");
+                findCmd.Parameters.AddWithValue("@Status", "Building");
 
-                DataSet ds = db.GetDataSetUsingCmdObj(findCmd);
+                DataSet ds = dbConnect.GetDataSetUsingCmdObj(findCmd);
 
                 if (ds != null &&
                     ds.Tables.Count > 0 &&
@@ -262,13 +262,13 @@ namespace TravelSiteModification.Controllers
                 insertCmd.Parameters.AddWithValue("@StartDate", DateTime.Today);
                 insertCmd.Parameters.AddWithValue("@EndDate", DateTime.Today.AddDays(7));
                 insertCmd.Parameters.AddWithValue("@TotalCost", additionalCost);
-                insertCmd.Parameters.AddWithValue("@Status", "Open");
+                insertCmd.Parameters.AddWithValue("@Status", "Building");
 
                 SqlParameter outputParam = new SqlParameter("@NewPackageID", System.Data.SqlDbType.Int);
                 outputParam.Direction = System.Data.ParameterDirection.Output;
                 insertCmd.Parameters.Add(outputParam);
 
-                db.DoUpdateUsingCmdObj(insertCmd);
+                dbConnect.DoUpdateUsingCmdObj(insertCmd);
 
                 packageId = Convert.ToInt32(outputParam.Value);
             }
@@ -278,17 +278,16 @@ namespace TravelSiteModification.Controllers
                 updateCmd.CommandType = CommandType.Text;
                 updateCmd.CommandText =
                     "UPDATE VacationPackage " +
-                    "SET TotalCost = ISNULL(TotalCost, 0) + @Amount " +
+                    "SET TotalCost = TotalCost + @Amount " +
                     "WHERE PackageID = @PackageID";
 
                 updateCmd.Parameters.AddWithValue("@Amount", additionalCost);
                 updateCmd.Parameters.AddWithValue("@PackageID", packageId);
 
-                db.DoUpdateUsingCmdObj(updateCmd);
+                dbConnect.DoUpdateUsingCmdObj(updateCmd);
             }
 
             HttpContext.Session.SetInt32("CurrentPackageID", packageId);
-
             return packageId;
         }
 
