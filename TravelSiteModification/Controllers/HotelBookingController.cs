@@ -110,19 +110,25 @@ namespace TravelSiteModification.Controllers
             {
                 DBConnect db = new DBConnect();
 
-                // Insert the hotel booking
                 SqlCommand cmd = new SqlCommand();
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = "InsertHotelBooking";
-                cmd.Parameters.AddWithValue("@UserID", userId);
+                cmd.CommandText = "AddHotelBooking";
+
                 cmd.Parameters.AddWithValue("@HotelID", hotelId.Value);
                 cmd.Parameters.AddWithValue("@RoomID", roomId.Value);
-                cmd.Parameters.AddWithValue("@CheckInDate", checkIn);
-                cmd.Parameters.AddWithValue("@CheckOutDate", checkOut);
-                cmd.Parameters.AddWithValue("@TotalAmount", model.TotalPrice);
                 cmd.Parameters.AddWithValue("@FirstName", model.FirstName ?? string.Empty);
                 cmd.Parameters.AddWithValue("@LastName", model.LastName ?? string.Empty);
                 cmd.Parameters.AddWithValue("@Email", model.Email ?? string.Empty);
+                cmd.Parameters.AddWithValue("@BookingDate", DateTime.Now);
+                cmd.Parameters.AddWithValue("@TotalPrice", model.TotalPrice);
+
+                DateTime ci = DateTime.Parse(checkIn);
+                DateTime co = DateTime.Parse(checkOut);
+                cmd.Parameters.AddWithValue("@CheckInDate", ci);
+                cmd.Parameters.AddWithValue("@CheckOutDate", co);
+
+                cmd.Parameters.AddWithValue("@Status", "Confirmed");
+                cmd.Parameters.AddWithValue("@UserID", userId);
 
                 int result = db.DoUpdateUsingCmdObj(cmd);
 

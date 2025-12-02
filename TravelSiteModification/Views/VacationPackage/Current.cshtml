@@ -1,0 +1,181 @@
+﻿@model TravelSiteModification.Models.CurrentPackageViewModel
+
+@{
+    ViewData["Title"] = "Current Vacation Package";
+}
+
+<div class="container py-5">
+    <h2 class="mb-4 text-primary">Current Vacation Package</h2>
+
+    @if (!Model.HasPackage)
+    {
+        <div class="alert alert-info">
+            You do not currently have a vacation package in progress.
+            <br />
+            Book a flight or hotel to start building your package.
+        </div>
+
+        <a asp-controller="Flight" asp-action="Find" class="btn btn-success mt-3 me-2">
+            Search Flights
+        </a>
+        <a asp-controller="Hotel" asp-action="Index" class="btn btn-outline-primary mt-3">
+            Search Hotels
+        </a>
+    }
+    else
+    {
+        @if (TempData["PackageConfirmationMessage"] != null)
+        {
+            <div class="alert alert-success">
+                @TempData["PackageConfirmationMessage"]
+            </div>
+        }
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h4 class="card-title mb-2">@Model.PackageName</h4>
+
+                <p class="mb-1">
+                    <strong>Dates:</strong>
+                    @Model.StartDate.ToShortDateString()
+                    &ndash;
+                    @Model.EndDate.ToShortDateString()
+                </p>
+
+                <p class="mb-1">
+                    <strong>Status:</strong> @Model.Status
+                </p>
+
+                <p class="mb-0">
+                    <strong>Current Total (flights + hotels):</strong>
+                    @Model.TotalCost.ToString("C")
+                </p>
+            </div>
+        </div>
+
+        <!-- Flights section -->
+        <h5 class="mb-3">Flights in this package</h5>
+
+        @if (Model.Flights == null || Model.Flights.Count == 0)
+        {
+            <div class="alert alert-warning">
+                There are no flights in this package yet.
+            </div>
+        }
+        else
+        {
+            <table class="table table-striped table-bordered mb-4">
+                <thead class="table-light">
+                    <tr>
+                        <th>Airline</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Departure</th>
+                        <th>Arrival</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.Flights)
+                    {
+                        <tr>
+                            <td>@f.AirlineName</td>
+                            <td>@f.DepartureCity</td>
+                            <td>@f.ArrivalCity</td>
+                            <td>@f.DepartureTime.ToString("g")</td>
+                            <td>@f.ArrivalTime.ToString("g")</td>
+                            <td>@f.Price.ToString("C")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <!-- Hotels section -->
+        <h5 class="mb-3">Hotels in this package</h5>
+
+        @if (Model.Hotels == null || Model.Hotels.Count == 0)
+        {
+            <div class="alert alert-warning">
+                There are no hotels in this package yet.
+            </div>
+        }
+        else
+        {
+            <table class="table table-striped table-bordered mb-4">
+                <thead class="table-light">
+                    <tr>
+                        <th>Hotel</th>
+                        <th>Location</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Total Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in Model.Hotels)
+                    {
+                        <tr>
+                            <td>@h.HotelName</td>
+                            <td>@h.City, @h.State</td>
+                            <td>@h.CheckInDate.ToShortDateString()</td>
+                            <td>@h.CheckOutDate.ToShortDateString()</td>
+                            <td>@h.TotalPrice.ToString("C")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <!-- Cars section -->
+        <h5 class="mb-3">Cars in this package</h5>
+
+        @if (Model.Cars == null || Model.Cars.Count == 0)
+        {
+            <div class="alert alert-warning">
+                There are no car rentals in this package yet.
+            </div>
+        }
+        else
+        {
+            <table class="table table-striped table-bordered mb-4">
+                <thead class="table-light">
+                    <tr>
+                        <th>Agency</th>
+                        <th>Car</th>
+                        <th>Type</th>
+                        <th>Pickup</th>
+                        <th>Dropoff</th>
+                        <th>Daily Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Cars)
+                    {
+                        <tr>
+                            <td>@c.AgencyName</td>
+                            <td>@c.CarModel</td>
+                            <td>@c.CarType</td>
+                            <td>@c.PickupLocationCode</td>
+                            <td>@c.DropoffLocationCode</td>
+                            <td>@c.PricePerDay.ToString("C")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <form asp-action="Confirm" asp-controller="VacationPackage" method="post" class="mt-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="packageId" value="@Model.PackageId" />
+
+            <button type="submit" class="btn btn-success">
+                Confirm &amp; Purchase This Package
+            </button>
+
+            <a asp-controller="Trips" asp-action="Index" class="btn btn-secondary ms-2">
+                Back to My Trips
+            </a>
+        </form>
+    }
+</div>
