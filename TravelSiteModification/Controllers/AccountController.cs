@@ -45,7 +45,6 @@ namespace TravelSiteModification.Controllers
             return View(model);
         }
 
-        // POST: /Account/Login
         [HttpPost]
         public IActionResult Login(LoginViewModel model)
         {
@@ -73,7 +72,11 @@ namespace TravelSiteModification.Controllers
                 HttpContext.Session.SetString("UserEmail", model.Email);
                 HttpContext.Session.SetInt32("UserID", userID);
 
-                // Handle "remember me" cookie for faster logins
+                // ⭐ NEW: This is what your homepage expects
+                ViewBag.FirstName = firstName;
+                ViewBag.UserFirstName = firstName; // optional but safe for other pages
+
+                // Remember me cookie
                 if (model.RememberMe)
                 {
                     CookieOptions options = new CookieOptions();
@@ -107,6 +110,7 @@ namespace TravelSiteModification.Controllers
             ModelState.AddModelError("", "Incorrect email or password.");
             return View(model);
         }
+
 
         [HttpPost]
         public IActionResult Logout()

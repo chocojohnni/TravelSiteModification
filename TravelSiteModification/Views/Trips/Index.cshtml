@@ -1,0 +1,227 @@
+﻿@model TravelSiteModification.Models.Trips.TripsViewModel
+
+@{
+    ViewData["Title"] = "My Trips";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+
+<div class="container vh-100 d-flex flex-column justify-content-center align-items-center">
+
+    <h2 class="mb-4 fw-bold text-primary text-center">Travelers Travel</h2>
+
+    <div style="max-width: 600px; width: 100%;">
+
+        <!-- LOGGED OUT PANEL -->
+        @if (!Model.IsLoggedIn)
+        {
+            <div class="card shadow-sm text-center p-4">
+                <h4 class="card-title text-danger mb-3">Access Restricted</h4>
+                <p class="card-text mb-4 fs-6">
+                    Please <strong>sign in or create an account</strong> to view your saved trips.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-success">
+                        Sign In or Create an Account
+                    </a>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">
+                        Return to Home
+                    </a>
+                </div>
+            </div>
+
+            return;
+        }
+
+        <!-- LOGGED IN PANEL -->
+        <div class="card shadow-sm p-4">
+
+            <h4 class="text-center mb-4">Your Travel Plans</h4>
+
+            <!-- HOTEL BOOKINGS -->
+            <h5 class="card-title mb-3 text-secondary border-bottom pb-2">🏨 Upcoming Hotel Bookings</h5>
+
+            @if (Model.HasHotelBookings)
+            {
+                foreach (var h in Model.HotelBookings)
+                {
+                    <div class="alert alert-info py-3 px-4 mb-3">
+                        <p class="mb-1 fw-bold">Hotel: @h.HotelName (@h.RoomType)</p>
+
+                        <p class="mb-0">
+                            <i class="bi bi-calendar-check"></i>
+                            Check-in: <span class="fw-semibold text-success">@h.CheckInDate</span>
+                            &nbsp;|&nbsp;
+                            Check-out: <span class="fw-semibold text-danger">@h.CheckOutDate</span>
+                        </p>
+
+                        <span class="badge bg-primary mt-2">Status: @h.Status</span>
+                        <span class="badge bg-secondary mt-2">Total: $@h.TotalPrice</span>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-secondary text-center mb-4">
+                    You have no upcoming hotel bookings.
+                </div>
+            }
+
+            <!-- FLIGHT BOOKINGS -->
+            <h5 class="card-title mb-3 text-secondary border-bottom pb-2 mt-4">✈️ Upcoming Flight Bookings</h5>
+
+            @if (Model.HasFlightBookings)
+            {
+                foreach (var f in Model.FlightBookings)
+                {
+                    <div class="alert alert-warning py-3 px-4 mb-3">
+                        <p class="mb-1 fw-bold">Flight: @f.AirlineName</p>
+
+                        <p class="mb-0">
+                            <i class="bi bi-arrow-right"></i>
+                            From <span class="fw-semibold">@f.DepartureCity</span>
+                            → <span class="fw-semibold">@f.ArrivalCity</span>
+                        </p>
+
+                        <p class="mb-0 mt-1">
+                            <i class="bi bi-calendar-event"></i>
+                            Departure: <span class="fw-semibold text-success">@f.DepartureTime</span>
+                            &nbsp;|&nbsp;
+                            Arrival: <span class="fw-semibold text-danger">@f.ArrivalTime</span>
+                        </p>
+
+                        <span class="badge bg-primary mt-2">Status: @f.Status</span>
+                        <span class="badge bg-secondary mt-2">Total: $@f.TotalPrice</span>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-secondary text-center">
+                    You have no upcoming flight bookings.
+                </div>
+            }
+
+            <!-- CAR RENTALS -->
+            <h5 class="card-title mb-3 text-secondary border-bottom pb-2 mt-4">🚗 Upcoming Car Rentals</h5>
+
+            @if (Model.HasCarBookings)
+            {
+                foreach (var c in Model.CarBookings)
+                {
+                    <div class="alert alert-success py-3 px-4 mb-3">
+                        <p class="mb-1 fw-bold">Car: @c.CarModel (@c.AgencyName)</p>
+
+                        <p class="mb-0">
+                            <i class="bi bi-geo-alt"></i>
+                            Pickup: @c.PickupLocationCode
+                            | Dropoff: @c.DropoffLocationCode
+                        </p>
+
+                        <p class="mb-0 mt-1">
+                            <i class="bi bi-calendar-check"></i>
+                            From: <span class="fw-semibold text-success">@c.PickupDate</span>
+                            &nbsp;|&nbsp;
+                            To: <span class="fw-semibold text-danger">@c.DropoffDate</span>
+                        </p>
+
+                        <span class="badge bg-primary mt-2">Status: @c.Status</span>
+                        <span class="badge bg-secondary mt-2">Total: $@c.TotalPrice</span>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-secondary text-center">
+                    You have no upcoming car rentals.
+                </div>
+            }
+
+            <!-- EVENT BOOKINGS -->
+            <h5 class="card-title mb-3 text-secondary border-bottom pb-2 mt-4">🎟️ Upcoming Event Bookings</h5>
+
+            @if (Model.HasEventBookings)
+            {
+                foreach (var ev in Model.EventBookings)
+                {
+                    <div class="alert alert-warning py-3 px-4 mb-3">
+                        <p class="mb-1 fw-bold">Event: @ev.EventName</p>
+
+                        <p class="mb-0">
+                            <i class="bi bi-geo-alt"></i>
+                            Location: @ev.EventLocation
+                        </p>
+
+                        <p class="mb-0 mt-1">
+                            <i class="bi bi-calendar-event"></i>
+                            Date: <span class="fw-semibold text-primary">@ev.EventDate</span>
+                        </p>
+
+                        <span class="badge bg-primary mt-2">Status: @ev.Status</span>
+                        <span class="badge bg-secondary mt-2">Total: $@ev.TotalPrice</span>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-secondary text-center">
+                    You have no upcoming event bookings.
+                </div>
+            }
+
+            <!-- PACKAGES -->
+            <h5 class="card-title mb-3 text-secondary border-bottom pb-2 mt-4">🧳 Your Vacation Packages</h5>
+
+            @if (Model.HasPackages)
+            {
+                foreach (var p in Model.VacationPackages)
+                {
+                    <div class="alert alert-info py-3 px-4 mb-3">
+                        <p class="mb-1 fw-bold">Package: @p.PackageName</p>
+
+                        <p class="mb-0">
+                            <i class="bi bi-calendar-event"></i>
+                            Start: <span class="fw-semibold text-success">@p.StartDate</span>
+                            &nbsp;|&nbsp;
+                            End: <span class="fw-semibold text-danger">@p.EndDate</span>
+                        </p>
+
+                        <span class="badge bg-primary mt-2">Status: @p.Status</span>
+                        <span class="badge bg-secondary mt-2">Total: $@p.TotalCost</span>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-secondary text-center">
+                    You have no upcoming vacation packages.
+                </div>
+            }
+
+            <!-- Buttons -->
+            <p class="text-muted mt-4 text-center">
+                This is your personalized trips dashboard.
+            </p>
+
+            <div class="text-center mt-3">
+                <a asp-controller="VacationPackage" asp-action="Current" class="btn btn-primary">
+                    View / Checkout Current Vacation Package
+                </a>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a asp-controller="TravelSite" asp-action="Index" class="btn btn-primary mt-2">
+                    <i class="bi bi-plus-circle-fill"></i> Plan a New Trip
+                </a>
+
+                <a asp-controller="TravelSite" asp-action="Index" class="btn btn-outline-secondary">
+                    Return to Home
+                </a>
+            </div>
+
+        </div> <!-- End Logged-in Card -->
+
+    </div>
+
+</div>

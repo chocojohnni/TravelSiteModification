@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Data.SqlClient;
 using TravelSiteModification.Models;
@@ -112,6 +112,7 @@ namespace TravelSiteModification.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Reload flight details
             SqlCommand reloadCmd = new SqlCommand();
             reloadCmd.CommandType = CommandType.StoredProcedure;
             reloadCmd.CommandText = "GetFlightByID";
@@ -143,6 +144,7 @@ namespace TravelSiteModification.Controllers
                 return View("~/Views/TravelSite/FlightBooking.cshtml", model);
             }
 
+            // Saving the flight booking
             SqlCommand insertCmd = new SqlCommand();
             insertCmd.CommandType = CommandType.StoredProcedure;
             insertCmd.CommandText = "AddFlightBooking";
@@ -162,8 +164,28 @@ namespace TravelSiteModification.Controllers
 
                 if (rowsAffected > 0)
                 {
-                    ViewBag.IsSuccess = true;
-                    ViewBag.StatusMessage = "Your flight has been booked successfully.";
+                    try
+                    {
+                        int packageId = GetOrCreateOpenVacationPackage(userIdValue, model.Price);
+
+                        SqlCommand pkgCmd = new SqlCommand();
+                        pkgCmd.CommandType = CommandType.StoredProcedure;
+                        pkgCmd.CommandText = "spInsertPackageFlight";
+                        pkgCmd.Parameters.AddWithValue("@PackageID", packageId);
+                        pkgCmd.Parameters.AddWithValue("@FlightID", model.FlightId);
+
+                        db.DoUpdateUsingCmdObj(pkgCmd);
+
+                        ViewBag.IsSuccess = true;
+                        ViewBag.StatusMessage = "Your flight has been booked and added to your vacation package.";
+                    }
+                    catch (Exception packageEx)
+                    {
+                        ViewBag.IsSuccess = true;
+                        ViewBag.StatusMessage =
+                            "Your flight has been booked, but it could not be added to your vacation package: " +
+                            packageEx.Message;
+                    }
                 }
                 else
                 {
@@ -241,6 +263,80 @@ namespace TravelSiteModification.Controllers
                 ModelState.AddModelError(String.Empty, "Error calling Flights API: " + ex.Message);
                 return View("Find", model);
             }
+        }
+
+        private int GetOrCreateOpenVacationPackage(int userId, decimal additionalCost)
+        {
+            int packageId = 0;
+
+            int? sessionPackageId = HttpContext.Session.GetInt32("CurrentPackageID");
+            if (sessionPackageId.HasValue)
+            {
+                packageId = sessionPackageId.Value;
+            }
+
+            DBConnect dbConnect = new DBConnect();
+
+            if (packageId == 0)
+            {
+                SqlCommand findCmd = new SqlCommand();
+                findCmd.CommandType = CommandType.Text;
+                findCmd.CommandText =
+                    "SELECT TOP 1 PackageID " +
+                    "FROM VacationPackage " +
+                    "WHERE UserID = @UserID AND Status = @Status " +
+                    "ORDER BY DateCreated DESC";
+
+                findCmd.Parameters.AddWithValue("@UserID", userId);
+                findCmd.Parameters.AddWithValue("@Status", "Building");
+
+                DataSet ds = dbConnect.GetDataSetUsingCmdObj(findCmd);
+
+                if (ds != null &&
+                    ds.Tables.Count > 0 &&
+                    ds.Tables[0].Rows.Count > 0)
+                {
+                    packageId = Convert.ToInt32(ds.Tables[0].Rows[0]["PackageID"]);
+                }
+            }
+
+            if (packageId == 0)
+            {
+                SqlCommand insertCmd = new SqlCommand();
+                insertCmd.CommandType = CommandType.StoredProcedure;
+                insertCmd.CommandText = "InsertVacationPackage";
+
+                insertCmd.Parameters.AddWithValue("@UserID", userId);
+                insertCmd.Parameters.AddWithValue("@PackageName", "My Vacation Package");
+                insertCmd.Parameters.AddWithValue("@StartDate", DateTime.Today);
+                insertCmd.Parameters.AddWithValue("@EndDate", DateTime.Today.AddDays(7));
+                insertCmd.Parameters.AddWithValue("@TotalCost", additionalCost);
+                insertCmd.Parameters.AddWithValue("@Status", "Building");
+
+                SqlParameter outputParam = new SqlParameter("@NewPackageID", System.Data.SqlDbType.Int);
+                outputParam.Direction = System.Data.ParameterDirection.Output;
+                insertCmd.Parameters.Add(outputParam);
+
+                dbConnect.DoUpdateUsingCmdObj(insertCmd);
+
+                packageId = Convert.ToInt32(outputParam.Value);
+            }
+            else
+            {
+                SqlCommand updateCmd = new SqlCommand();
+                updateCmd.CommandType = CommandType.Text;
+                updateCmd.CommandText =
+                    "UPDATE VacationPackage " +
+                    "SET TotalCost = TotalCost + @Amount " +
+                    "WHERE PackageID = @PackageID";
+
+                updateCmd.Parameters.AddWithValue("@Amount", additionalCost);
+                updateCmd.Parameters.AddWithValue("@PackageID", packageId);
+
+                dbConnect.DoUpdateUsingCmdObj(updateCmd);
+            }
+            HttpContext.Session.SetInt32("CurrentPackageID", packageId);
+            return packageId;
         }
     }
 }

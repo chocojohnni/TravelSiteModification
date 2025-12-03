@@ -4,7 +4,6 @@ namespace TravelSiteModification.Models
 {
     public class HotelBookingViewModel
     {
-        // Booking Display Information
         public int HotelID { get; set; }
         public int RoomID { get; set; }
 
@@ -15,6 +14,10 @@ namespace TravelSiteModification.Models
 
         public string CheckInDate { get; set; }
         public string CheckOutDate { get; set; }
+
+        // Calculated stay information
+        public int TotalNights { get; set; }
+        public decimal TotalPrice { get; set; }
 
         // Guest info fields (form submits these)
         public string FirstName { get; set; }
@@ -29,5 +32,10 @@ namespace TravelSiteModification.Models
         // Output messages
         public string StatusMessage { get; set; }
         public bool BookingSuccessful { get; set; }
+
+        public string HotelAddress { get; set; }
+        public string HotelPhone { get; set; }
+        public string HotelEmail { get; set; }
+
     }
 }

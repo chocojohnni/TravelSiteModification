@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Data;
@@ -50,16 +50,15 @@ namespace TravelSiteModification.Controllers
 
         // POST: /CarBooking
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Index(CarBookingViewModel model)
         {
-            // reload selected car + dates from Session
             if (HttpContext.Session.GetInt32("SelectedCarID") == null ||
                 HttpContext.Session.GetString("CarPickupDate") == null ||
                 HttpContext.Session.GetString("CarDropoffDate") == null)
             {
                 model = new CarBookingViewModel();
-                model.StatusMessage = "<p class='alert alert-danger'>Booking failed: Required session data is missing. Please try again.</p>";
+                model.StatusMessage =
+                    "<p class='alert alert-danger'>Required session data is missing. Please start your car search again.</p>";
                 return View(model);
             }
 
@@ -91,7 +90,8 @@ namespace TravelSiteModification.Controllers
             if (string.IsNullOrWhiteSpace(baseModel.FirstName) ||
                 string.IsNullOrWhiteSpace(baseModel.Email))
             {
-                baseModel.StatusMessage = "<p class='text-danger'>Please ensure First Name and Email are filled out.</p>";
+                baseModel.StatusMessage =
+                    "<p class='text-danger'>Please ensure First Name and Email are filled out.</p>";
                 return View(baseModel);
             }
 
@@ -111,9 +111,31 @@ namespace TravelSiteModification.Controllers
             if (bookingResult == "Success")
             {
                 baseModel.BookingConfirmed = true;
-                baseModel.StatusMessage = "<p class='alert alert-success'>🎉 <strong>Booking Confirmed!</strong> A confirmation email has been sent.</p>";
+                baseModel.StatusMessage =
+                    "<p class='alert alert-success'><strong>Booking Confirmed!</strong> A confirmation email has been sent.</p>";
 
-                // clean up like WebForms
+                try
+                {
+                    int? userIdNullable = HttpContext.Session.GetInt32("UserID");
+                    if (userIdNullable.HasValue)
+                    {
+                        int packageId = GetOrCreateOpenVacationPackage(userIdNullable.Value, finalPrice);
+
+                        DBConnect db = new DBConnect();
+                        SqlCommand pkgCmd = new SqlCommand();
+                        pkgCmd.CommandType = CommandType.StoredProcedure;
+                        pkgCmd.CommandText = "spInsertPackageCar";
+                        pkgCmd.Parameters.AddWithValue("@PackageID", packageId);
+                        pkgCmd.Parameters.AddWithValue("@CarID", selectedCarID);
+
+                        db.DoUpdateUsingCmdObj(pkgCmd);
+                    }
+                }
+                catch (Exception)
+                {
+
+                }
+
                 HttpContext.Session.Remove("SelectedCarID");
                 HttpContext.Session.Remove("CarFinalPrice");
             }
@@ -231,6 +253,80 @@ namespace TravelSiteModification.Controllers
             {
                 return "<p class='alert alert-danger'>❌ <strong>Database Exception:</strong> " + ex.Message + "</p>";
             }
+        }
+
+        private int GetOrCreateOpenVacationPackage(int userId, decimal additionalCost)
+        {
+            int packageId = 0;
+
+            int? sessionPackageId = HttpContext.Session.GetInt32("CurrentPackageID");
+            if (sessionPackageId.HasValue)
+            {
+                packageId = sessionPackageId.Value;
+            }
+
+            DBConnect dbConnect = new DBConnect();
+
+            if (packageId == 0)
+            {
+                SqlCommand findCmd = new SqlCommand();
+                findCmd.CommandType = CommandType.Text;
+                findCmd.CommandText =
+                    "SELECT TOP 1 PackageID " +
+                    "FROM VacationPackage " +
+                    "WHERE UserID = @UserID AND Status = @Status " +
+                    "ORDER BY DateCreated DESC";
+
+                findCmd.Parameters.AddWithValue("@UserID", userId);
+                findCmd.Parameters.AddWithValue("@Status", "Building");
+
+                DataSet ds = dbConnect.GetDataSetUsingCmdObj(findCmd);
+
+                if (ds != null &&
+                    ds.Tables.Count > 0 &&
+                    ds.Tables[0].Rows.Count > 0)
+                {
+                    packageId = Convert.ToInt32(ds.Tables[0].Rows[0]["PackageID"]);
+                }
+            }
+
+            if (packageId == 0)
+            {
+                SqlCommand insertCmd = new SqlCommand();
+                insertCmd.CommandType = CommandType.StoredProcedure;
+                insertCmd.CommandText = "InsertVacationPackage";
+
+                insertCmd.Parameters.AddWithValue("@UserID", userId);
+                insertCmd.Parameters.AddWithValue("@PackageName", "My Vacation Package");
+                insertCmd.Parameters.AddWithValue("@StartDate", DateTime.Today);
+                insertCmd.Parameters.AddWithValue("@EndDate", DateTime.Today.AddDays(7));
+                insertCmd.Parameters.AddWithValue("@TotalCost", additionalCost);
+                insertCmd.Parameters.AddWithValue("@Status", "Building");
+
+                SqlParameter outputParam = new SqlParameter("@NewPackageID", System.Data.SqlDbType.Int);
+                outputParam.Direction = System.Data.ParameterDirection.Output;
+                insertCmd.Parameters.Add(outputParam);
+
+                dbConnect.DoUpdateUsingCmdObj(insertCmd);
+
+                packageId = Convert.ToInt32(outputParam.Value);
+            }
+            else
+            {
+                SqlCommand updateCmd = new SqlCommand();
+                updateCmd.CommandType = CommandType.Text;
+                updateCmd.CommandText =
+                    "UPDATE VacationPackage " +
+                    "SET TotalCost = TotalCost + @Amount " +
+                    "WHERE PackageID = @PackageID";
+
+                updateCmd.Parameters.AddWithValue("@Amount", additionalCost);
+                updateCmd.Parameters.AddWithValue("@PackageID", packageId);
+
+                dbConnect.DoUpdateUsingCmdObj(updateCmd);
+            }
+            HttpContext.Session.SetInt32("CurrentPackageID", packageId);
+            return packageId;
         }
     }
 }

@@ -31,12 +31,24 @@
         <div class="container-fluid">
 
             <!-- Brand -->
-            <a class="navbar-brand fw-bold text-primary fs-4"
-               asp-area=""
-               asp-controller="Home"
-               asp-action="Index">
-                Travelers Travel
-            </a>
+            @if (!string.IsNullOrEmpty(firstName))
+            {
+                <!-- Logo is clickable when logged in -->
+                <a class="navbar-brand fw-bold text-primary fs-4"
+                   asp-area=""
+                   asp-controller="TravelSite"
+                   asp-action="Index">
+                    Travelers Travel
+                </a>
+            }
+            else
+            {
+                <!-- Logo is visible but not clickable -->
+                <span class="navbar-brand fw-bold text-primary fs-4" style="cursor: default;">
+                    Travelers Travel
+                </span>
+            }
+
 
             <!-- Mobile toggle -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
