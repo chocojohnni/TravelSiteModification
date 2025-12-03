@@ -1,19 +1,20 @@
 ﻿namespace TravelSiteModification.Models
 {
-    public class FlightDto
+    public class Flight
     {
         private int flightID;
-        private int airCarrierID;
+        private int airlineID;
         private string departureCity;
         private string departureState;
         private string arrivalCity;
         private string arrivalState;
         private DateTime departureTime;
         private DateTime arrivalTime;
-        private decimal seatPrice;
+        private decimal price;
         private int seatsAvailable;
         private bool nonStop;
         private bool firstClass;
+        private string airlineImage; // UI-only
 
         public int FlightID
         {
@@ -21,10 +22,10 @@
             set { flightID = value; }
         }
 
-        public int AirCarrierID
+        public int AirlineID
         {
-            get { return airCarrierID; }
-            set { airCarrierID = value; }
+            get { return airlineID; }
+            set { airlineID = value; }
         }
 
         public string DepartureCity
@@ -63,10 +64,10 @@
             set { arrivalTime = value; }
         }
 
-        public decimal SeatPrice
+        public decimal Price
         {
-            get { return seatPrice; }
-            set { seatPrice = value; }
+            get { return price; }
+            set { price = value; }
         }
 
         public int SeatsAvailable
@@ -85,6 +86,12 @@
         {
             get { return firstClass; }
             set { firstClass = value; }
+        }
+
+        public string AirlineImage
+        {
+            get { return airlineImage; }
+            set { airlineImage = value; }
         }
     }
 }
