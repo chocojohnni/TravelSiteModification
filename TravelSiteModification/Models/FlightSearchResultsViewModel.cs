@@ -2,16 +2,16 @@
 {
     public class FlightSearchResultsViewModel
     {
-        private FlightSearchRequest search;
-        private List<FlightDto> flights;
+        private FlightSearchViewModel search;
+        private List<Flight> flights;
 
-        public FlightSearchRequest Search
+        public FlightSearchViewModel Search
         {
             get { return search; }
             set { search = value; }
         }
 
-        public List<FlightDto> Flights
+        public List<Flight> Flights
         {
             get { return flights; }
             set { flights = value; }

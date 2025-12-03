@@ -17,13 +17,13 @@ builder.Services.AddHttpClient<EventsAPIClient>(client =>
     }
 });
 
-builder.Services.AddHttpClient<FlightsAPIClient>(client =>
+builder.Services.AddHttpClient<FlightsAPIAccess>(client =>
 {
     string baseUrl = "https://cis-iis2.temple.edu/Fall2025/CIS3342_tuk77426/WebAPI/";
     client.BaseAddress = new Uri(baseUrl);
 });
 
-builder.Services.AddHttpClient<FlightsAPIClient>(client =>
+builder.Services.AddHttpClient<FlightsAPIAccess>(client =>
 {
     var baseUrl = builder.Configuration["FlightsApi:BaseUrl"];
     if (!string.IsNullOrEmpty(baseUrl))

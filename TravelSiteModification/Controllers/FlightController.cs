@@ -10,8 +10,8 @@ namespace TravelSiteModification.Controllers
     public class FlightController : Controller
     {
         private readonly DBConnect db;
-        private readonly FlightsAPIClient flightsApiClient;
-        public FlightController(FlightsAPIClient flightsClient)
+        private readonly FlightsAPIAccess flightsApiClient;
+        public FlightController(FlightsAPIAccess flightsClient)
         {
             db = new DBConnect();
             flightsApiClient = flightsClient;
@@ -205,7 +205,7 @@ namespace TravelSiteModification.Controllers
         [HttpGet]
         public IActionResult Find()
         {
-            FlightSearchRequest model = new FlightSearchRequest();
+            FlightSearchViewModel model = new FlightSearchViewModel();
 
             string depCity = Request.Query["DepCity"];
             if (String.IsNullOrEmpty(depCity) == false)
@@ -231,7 +231,7 @@ namespace TravelSiteModification.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Find(FlightSearchRequest model)
+        public async Task<IActionResult> Find(FlightSearchViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -250,7 +250,7 @@ namespace TravelSiteModification.Controllers
 
             try
             {
-                List<FlightDto> flights = await flightsApiClient.FindFlightsAsync(model);
+                List<Flight> flights = await flightsApiClient.FindFlightsAsync(model);
 
                 FlightSearchResultsViewModel viewModel = new FlightSearchResultsViewModel();
                 viewModel.Search = model;
