@@ -4,6 +4,8 @@ using System.Data;
 using System.Data.SqlClient;
 using TravelSiteModification.Models.Trips;
 using Utilities;
+using ScottPlot;
+using System.IO;
 
 namespace TravelSiteModification.Controllers
 {
@@ -34,6 +36,10 @@ namespace TravelSiteModification.Controllers
             LoadCarBookings(userId.Value, model);
             LoadEventBookings(userId.Value, model);
             LoadVacationPackages(userId.Value, model);
+
+            SpendingData spendingData = new SpendingData();
+            SpendingSummary spendingSummary = spendingData.GetUserSpendingSummary(userId.Value);
+            ViewBag.SpendingSummary = spendingSummary;
 
             return View(model);
         }
@@ -177,6 +183,80 @@ namespace TravelSiteModification.Controllers
             }
 
             model.HasPackages = model.VacationPackages.Count > 0;
+        }
+
+        public IActionResult SpendingChartImage()
+        {
+            int? sessionUserId = HttpContext.Session.GetInt32("UserID");
+            if (!sessionUserId.HasValue)
+            {
+                byte[] emptyBytes = new byte[0];
+                return File(emptyBytes, "image/png");
+            }
+
+            int userId = sessionUserId.Value;
+
+            SpendingData spendingData = new SpendingData();
+            SpendingSummary summary = spendingData.GetUserSpendingSummary(userId);
+
+            double[] values = new double[4];
+            values[0] = (double)summary.HotelsTotal;
+            values[1] = (double)summary.FlightsTotal;
+            values[2] = (double)summary.CarsTotal;
+            values[3] = (double)summary.EventsTotal;
+
+            string[] labels = new string[4];
+            labels[0] = "Hotels";
+            labels[1] = "Flights";
+            labels[2] = "Cars";
+            labels[3] = "Events";
+
+            bool allZero = true;
+            int index = 0;
+            while (index < values.Length)
+            {
+                if (values[index] > 0.0)
+                {
+                    allZero = false;
+                }
+
+                index = index + 1;
+            }
+
+            Plot plt = new Plot();
+
+            if (!allZero)
+            {
+                List<PieSlice> slices =
+                    new List<PieSlice>();
+
+                int i = 0;
+                while (i < values.Length)
+                {
+                    PieSlice slice = new PieSlice();
+                    slice.Value = values[i];
+                    slice.Label = labels[i];
+                    slices.Add(slice);
+
+                    i = i + 1;
+                }
+
+                ScottPlot.Plottables.Pie pie = plt.Add.Pie(slices);
+                pie.ExplodeFraction = 0.05;
+                pie.SliceLabelDistance = 1.3;
+
+                plt.ShowLegend();
+                plt.Axes.Frameless();
+                plt.HideGrid();
+                plt.Title("Your Spending by Category");
+            }
+            else
+            {
+                plt.Title("No spending data available yet");
+            }
+
+            byte[] bytes = plt.GetImageBytes(600, 400, ScottPlot.ImageFormat.Png);
+            return File(bytes, "image/png");
         }
     }
 }
