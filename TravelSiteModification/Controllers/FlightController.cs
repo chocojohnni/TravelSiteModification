@@ -95,7 +95,7 @@ namespace TravelSiteModification.Controllers
         }
 
         [HttpPost]
-        public IActionResult Book(FlightBookingViewModel model)
+        public async Task<IActionResult> Book(FlightBookingViewModel model)
         {
             int? userIdNullable = HttpContext.Session.GetInt32("UserID");
             int userIdValue = 0;
@@ -112,12 +112,15 @@ namespace TravelSiteModification.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Reload flight details
             SqlCommand reloadCmd = new SqlCommand();
             reloadCmd.CommandType = CommandType.StoredProcedure;
             reloadCmd.CommandText = "GetFlightByID";
             reloadCmd.Parameters.AddWithValue("@FlightID", model.FlightId);
 
             DataSet reloadDataSet = db.GetDataSetUsingCmdObj(reloadCmd);
+
+            int airlineId = 0; // we'll try to load this from the DB row
 
             if (reloadDataSet != null &&
                 reloadDataSet.Tables.Count > 0 &&
@@ -136,6 +139,12 @@ namespace TravelSiteModification.Controllers
                     decimal priceFromDatabase = Convert.ToDecimal(row["Price"]);
                     model.Price = priceFromDatabase;
                 }
+
+                // ?? Try to read AirlineID if your GetFlightByID stored proc returns it
+                if (row.Table.Columns.Contains("AirlineID"))
+                {
+                    airlineId = Convert.ToInt32(row["AirlineID"]);
+                }
             }
 
             if (!ModelState.IsValid)
@@ -143,6 +152,7 @@ namespace TravelSiteModification.Controllers
                 return View("~/Views/TravelSite/FlightBooking.cshtml", model);
             }
 
+            // Saving the flight booking (LOCAL DB)
             SqlCommand insertCmd = new SqlCommand();
             insertCmd.CommandType = CommandType.StoredProcedure;
             insertCmd.CommandText = "AddFlightBooking";
@@ -162,6 +172,8 @@ namespace TravelSiteModification.Controllers
 
                 if (rowsAffected > 0)
                 {
+                    bool addedToPackage = false;
+
                     try
                     {
                         int packageId = GetOrCreateOpenVacationPackage(userIdValue, model.Price);
@@ -173,10 +185,7 @@ namespace TravelSiteModification.Controllers
                         pkgCmd.Parameters.AddWithValue("@FlightID", model.FlightId);
 
                         db.DoUpdateUsingCmdObj(pkgCmd);
-
-                        ViewBag.IsSuccess = true;
-                        ViewBag.StatusMessage =
-                            "Your flight has been booked and added to your vacation package.";
+                        addedToPackage = true;
                     }
                     catch (Exception packageEx)
                     {
@@ -184,6 +193,58 @@ namespace TravelSiteModification.Controllers
                         ViewBag.StatusMessage =
                             "Your flight has been booked, but it could not be added to your vacation package: " +
                             packageEx.Message;
+                    }
+
+                    // /reserve on the Flights API
+                    try
+                    {
+                        // Use real TravelSiteID and TravelSiteAPIToken
+                        const int travelSiteId = 1;                 // TODO: replace with TravelSiteID
+                        const string travelSiteToken = "TOKEN_HERE"; // TODO: replace with API token
+
+                        FlightReserveRequest apiRequest = new FlightReserveRequest
+                        {
+                            AirlineID = airlineId,
+                            FlightID = model.FlightId,
+                            CustomerName = model.FirstName + " " + model.LastName,
+                            CustomerEmail = model.Email,
+                            CustomerPhone = model.PhoneNumber,
+                            SeatsBooked = model.SeatsBooked,
+                            TravelSiteID = travelSiteId,
+                            TravelSiteAPIToken = travelSiteToken
+                        };
+
+                        bool apiSuccess = await flightsApi.ReserveFlightAsync(apiRequest);
+
+                        if (apiSuccess)
+                        {
+                            if (addedToPackage)
+                            {
+                                ViewBag.IsSuccess = true;
+                                ViewBag.StatusMessage =
+                                    "Your flight has been booked, added to your vacation package, and reserved with the airline.";
+                            }
+                            else
+                            {
+                                ViewBag.IsSuccess = true;
+                                ViewBag.StatusMessage =
+                                    "Your flight has been booked and reserved with the airline.";
+                            }
+                        }
+                        else
+                        {
+                            ViewBag.IsSuccess = true;
+                            ViewBag.StatusMessage =
+                                "Your flight has been booked (and added to your vacation package if applicable), " +
+                                "but there was a problem reserving it with the airline via the Flights API.";
+                        }
+                    }
+                    catch (Exception apiEx)
+                    {
+                        ViewBag.IsSuccess = true;
+                        ViewBag.StatusMessage =
+                            "Your flight has been booked (and added to your vacation package if applicable), " +
+                            "but the Flights API /reserve call failed: " + apiEx.Message;
                     }
                 }
                 else
@@ -338,5 +399,7 @@ namespace TravelSiteModification.Controllers
             HttpContext.Session.SetInt32("CurrentPackageID", packageId);
             return packageId;
         }
+
+
     }
 }

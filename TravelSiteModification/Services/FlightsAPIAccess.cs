@@ -179,6 +179,30 @@ namespace TravelSiteModification.Services
             return flights;
         }
 
-        // to add a ReserveFlightAsync method that calls /reserve later
+        /// <summary>
+        /// Calls the Flights Web API /reserve endpoint to record a reservation.
+        /// Returns true if the API call succeeds (2xx status).
+        /// </summary>
+        public async Task<bool> ReserveFlightAsync(FlightReserveRequest request)
+        {
+            string url = $"{baseUrl}/reserve";
+
+            string json = JsonConvert.SerializeObject(request);
+            using StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await httpClient.PostAsync(url, content);
+            string rawResponse = await response.Content.ReadAsStringAsync();
+
+            Debug.WriteLine("----- RESERVE FLIGHT -----");
+            Debug.WriteLine("URL: " + url);
+            Debug.WriteLine("REQUEST JSON: " + json);
+            Debug.WriteLine("RESPONSE (" + (int)response.StatusCode + "): " + rawResponse);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+            return true;
+        }
     }
 }
