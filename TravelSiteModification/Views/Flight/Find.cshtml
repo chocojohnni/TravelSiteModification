@@ -1,10 +1,15 @@
 ﻿@model TravelSiteModification.Models.FlightSearchViewModel
 
 @{
-    ViewData["Title"] = "Find Flights";
+    ViewData["Title"] = "Find Flights (Web API)";
 }
 
 <h2>Find Flights</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-warning">@Model.ErrorMessage</div>
+}
 
 <form asp-action="Find" method="post">
     <div class="row">
@@ -32,11 +37,17 @@
         </div>
     </div>
 
-    <h4>Optional Flight Requirements</h4>
+    <h4>Flight Requirements (optional)</h4>
 
     <div class="mb-3">
-        <label asp-for="AirlineID" class="form-label"></label>
-        <input asp-for="AirlineID" class="form-control" />
+        <label asp-for="AirlineID" class="form-label">Airline</label>
+        <select asp-for="AirlineID" class="form-select">
+            <option value="">Any Airline</option>
+            @foreach (var carrier in Model.Carriers)
+            {
+                <option value="@carrier.AirLineID">@carrier.AirlineName</option>
+            }
+        </select>
     </div>
 
     <div class="mb-3">
@@ -55,8 +66,45 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Search Flights</button>
-
-    <div class="text-danger mt-3">
-        @Html.ValidationSummary(true)
-    </div>
 </form>
+
+@if (Model.Flights != null && Model.Flights.Count > 0)
+{
+    <hr />
+    <h3>Available Flights</h3>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Flight</th>
+                <th>Route</th>
+                <th>Departure</th>
+                <th>Arrival</th>
+                <th>Price</th>
+                <th>Seats</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var f in Model.Flights)
+            {
+                <tr>
+                    <td>@f.FlightID</td>
+                    <td>@f.DepartureCity → @f.ArrivalCity</td>
+                    <td>@f.DepartureTime</td>
+                    <td>@f.ArrivalTime</td>
+                    <td>@f.Price.ToString("C")</td>
+                    <td>@f.SeatsAvailable</td>
+                    <td>
+                        <a asp-controller="Flight"
+                           asp-action="Book"
+                           asp-route-flightId="@f.FlightID"
+                           class="btn btn-sm btn-success">
+                            Book
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

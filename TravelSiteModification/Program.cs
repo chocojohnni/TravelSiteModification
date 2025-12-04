@@ -19,7 +19,7 @@ builder.Services.AddHttpClient<EventsAPIClient>(client =>
 
 builder.Services.AddHttpClient<FlightsAPIAccess>(client =>
 {
-    string baseUrl = "https://cis-iis2.temple.edu/Fall2025/CIS3342_tuk77426/WebAPI/";
+    string baseUrl = "https://cis-iis2.temple.edu/Fall2025/CIS3342_tun31378/WebAPI/";
     client.BaseAddress = new Uri(baseUrl);
 });
 
