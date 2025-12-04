@@ -2,19 +2,7 @@
 {
     public class FlightSearchResultsViewModel
     {
-        private FlightSearchViewModel search;
-        private List<Flight> flights;
-
-        public FlightSearchViewModel Search
-        {
-            get { return search; }
-            set { search = value; }
-        }
-
-        public List<Flight> Flights
-        {
-            get { return flights; }
-            set { flights = value; }
-        }
+        public FlightSearchRequest Search { get; set; }
+        public List<FlightDto> Flights { get; set; } = new List<FlightDto>();
     }
 }

@@ -7,6 +7,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession();
 builder.Services.AddDistributedMemoryCache();
+builder.Services.AddControllersWithViews();
 
 builder.Services.AddHttpClient<EventsAPIClient>(client =>
 {
@@ -17,22 +18,25 @@ builder.Services.AddHttpClient<EventsAPIClient>(client =>
     }
 });
 
-builder.Services.AddHttpClient<FlightsAPIAccess>(client =>
-{
-    string baseUrl = "https://cis-iis2.temple.edu/Fall2025/CIS3342_tuk77426/WebAPI/";
-    client.BaseAddress = new Uri(baseUrl);
-});
+//builder.Services.AddHttpClient<FlightsAPIAccess>(client =>
+//{
+//    string baseUrl = "https://cis-iis2.temple.edu/Fall2025/CIS3342_tun31378/WebAPI/";
+//    client.BaseAddress = new Uri(baseUrl);
+//});
 
 builder.Services.AddHttpClient<FlightsAPIAccess>(client =>
 {
-    var baseUrl = builder.Configuration["FlightsApi:BaseUrl"];
+    string baseUrl = builder.Configuration["FlightsApi:BaseUrl"];
     if (!string.IsNullOrEmpty(baseUrl))
     {
         client.BaseAddress = new Uri(baseUrl);
     }
 });
 
-builder.Services.AddHttpClient<CarAPIService>();
+builder.Services.AddHttpClient<CarAPIService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7116/");
+});
 
 //builder.Services.AddHttpClient<EventsAPIClient>(client =>
 //{

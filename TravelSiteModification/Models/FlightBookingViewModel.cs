@@ -15,6 +15,8 @@ namespace TravelSiteModification.Models
         private string cardNumber;
         private string expiryDate;
         private string cvv;
+        private string phoneNumber;
+        private int seatsBooked;
 
         private bool isSuccess;
 
@@ -95,6 +97,22 @@ namespace TravelSiteModification.Models
         {
             get { return cvv; }
             set { cvv = value; }
+        }
+
+        [Display(Name = "Phone Number")]
+        [Phone]
+        public string PhoneNumber
+        {
+            get { return phoneNumber; }
+            set { phoneNumber = value; }
+        }
+
+        [Display(Name = "Number of Seats")]
+        [Range(1, 10, ErrorMessage = "Please book between 1 and 10 seats.")]
+        public int SeatsBooked
+        {
+            get { return seatsBooked; }
+            set { seatsBooked = value; }
         }
 
         public bool IsSuccess

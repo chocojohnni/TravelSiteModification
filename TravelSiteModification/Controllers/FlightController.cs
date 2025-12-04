@@ -10,12 +10,16 @@ namespace TravelSiteModification.Controllers
     public class FlightController : Controller
     {
         private readonly DBConnect db;
-        private readonly FlightsAPIAccess flightsApiClient;
-        public FlightController(FlightsAPIAccess flightsClient)
+        private readonly FlightsAPIAccess flightsApi;
+        private readonly IConfiguration appConfiguration;
+
+        public FlightController(FlightsAPIAccess flightApiAccess, IConfiguration appConfigurationParameter)
         {
             db = new DBConnect();
-            flightsApiClient = flightsClient;
+            flightsApi = flightApiAccess;
+            appConfiguration = appConfigurationParameter;
         }
+
         public IActionResult Index()
         {
             return View();
@@ -39,7 +43,6 @@ namespace TravelSiteModification.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // Try to load flight details from db
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "GetFlightByID";
@@ -78,15 +81,14 @@ namespace TravelSiteModification.Controllers
                 ViewBag.ArrivalTime = DateTime.Now;
             }
 
-            // passenger info from session
             string firstName = HttpContext.Session.GetString("UserFirstName");
-            if (String.IsNullOrEmpty(firstName) == false)
+            if (!string.IsNullOrEmpty(firstName))
             {
                 model.FirstName = firstName;
             }
 
             string email = HttpContext.Session.GetString("UserEmail");
-            if (String.IsNullOrEmpty(email) == false)
+            if (!string.IsNullOrEmpty(email))
             {
                 model.Email = email;
             }
@@ -95,7 +97,7 @@ namespace TravelSiteModification.Controllers
         }
 
         [HttpPost]
-        public IActionResult Book(FlightBookingViewModel model)
+        public async Task<IActionResult> Book(FlightBookingViewModel model)
         {
             int? userIdNullable = HttpContext.Session.GetInt32("UserID");
             int userIdValue = 0;
@@ -120,6 +122,8 @@ namespace TravelSiteModification.Controllers
 
             DataSet reloadDataSet = db.GetDataSetUsingCmdObj(reloadCmd);
 
+            int airlineId = 0; // we'll try to load this from the DB row
+
             if (reloadDataSet != null &&
                 reloadDataSet.Tables.Count > 0 &&
                 reloadDataSet.Tables[0].Rows.Count > 0)
@@ -137,14 +141,20 @@ namespace TravelSiteModification.Controllers
                     decimal priceFromDatabase = Convert.ToDecimal(row["Price"]);
                     model.Price = priceFromDatabase;
                 }
+
+                // ?? Try to read AirlineID if your GetFlightByID stored proc returns it
+                if (row.Table.Columns.Contains("AirlineID"))
+                {
+                    airlineId = Convert.ToInt32(row["AirlineID"]);
+                }
             }
 
-            if (ModelState.IsValid == false)
+            if (!ModelState.IsValid)
             {
                 return View("~/Views/TravelSite/FlightBooking.cshtml", model);
             }
 
-            // Saving the flight booking
+            // Saving the flight booking (LOCAL DB)
             SqlCommand insertCmd = new SqlCommand();
             insertCmd.CommandType = CommandType.StoredProcedure;
             insertCmd.CommandText = "AddFlightBooking";
@@ -164,6 +174,8 @@ namespace TravelSiteModification.Controllers
 
                 if (rowsAffected > 0)
                 {
+                    bool addedToPackage = false;
+
                     try
                     {
                         int packageId = GetOrCreateOpenVacationPackage(userIdValue, model.Price);
@@ -175,9 +187,7 @@ namespace TravelSiteModification.Controllers
                         pkgCmd.Parameters.AddWithValue("@FlightID", model.FlightId);
 
                         db.DoUpdateUsingCmdObj(pkgCmd);
-
-                        ViewBag.IsSuccess = true;
-                        ViewBag.StatusMessage = "Your flight has been booked and added to your vacation package.";
+                        addedToPackage = true;
                     }
                     catch (Exception packageEx)
                     {
@@ -186,48 +196,88 @@ namespace TravelSiteModification.Controllers
                             "Your flight has been booked, but it could not be added to your vacation package: " +
                             packageEx.Message;
                     }
+
+                    // /reserve on the Flights API
+                    try
+                    {
+                        // Use real TravelSiteID and TravelSiteAPIToken
+                        int travelSiteId = Convert.ToInt32(appConfiguration["FlightsApi:TravelSiteID"]);
+                        string travelSiteToken = appConfiguration["FlightsApi:TravelSiteToken"];
+
+                        FlightReserveRequest apiRequest = new FlightReserveRequest
+                        {
+                            AirlineID = airlineId,
+                            FlightID = model.FlightId,
+                            CustomerName = model.FirstName + " " + model.LastName,
+                            CustomerEmail = model.Email,
+                            CustomerPhone = model.PhoneNumber,
+                            SeatsBooked = model.SeatsBooked,
+                            TravelSiteID = travelSiteId,
+                            TravelSiteAPIToken = travelSiteToken
+                        };
+
+                        bool apiSuccess = await flightsApi.ReserveFlightAsync(apiRequest);
+
+                        if (apiSuccess)
+                        {
+                            if (addedToPackage)
+                            {
+                                ViewBag.IsSuccess = true;
+                                ViewBag.StatusMessage =
+                                    "Your flight has been booked, added to your vacation package, and reserved with the airline.";
+                            }
+                            else
+                            {
+                                ViewBag.IsSuccess = true;
+                                ViewBag.StatusMessage =
+                                    "Your flight has been booked and reserved with the airline.";
+                            }
+                        }
+                        else
+                        {
+                            ViewBag.IsSuccess = true;
+                            ViewBag.StatusMessage =
+                                "Your flight has been booked (and added to your vacation package if applicable), " +
+                                "but there was a problem reserving it with the airline via the Flights API.";
+                        }
+                    }
+                    catch (Exception apiEx)
+                    {
+                        ViewBag.IsSuccess = true;
+                        ViewBag.StatusMessage =
+                            "Your flight has been booked (and added to your vacation package if applicable), " +
+                            "but the Flights API /reserve call failed: " + apiEx.Message;
+                    }
                 }
                 else
                 {
                     ViewBag.IsSuccess = false;
-                    ViewBag.StatusMessage = "There was a problem saving your booking. Please try again.";
+                    ViewBag.StatusMessage =
+                        "There was a problem saving your booking. Please try again.";
                 }
             }
             catch (Exception ex)
             {
                 ViewBag.IsSuccess = false;
-                ViewBag.StatusMessage = "Database error while saving your booking: " + ex.Message;
+                ViewBag.StatusMessage =
+                    "Database error while saving your booking: " + ex.Message;
             }
 
             return View("~/Views/TravelSite/FlightBooking.cshtml", model);
         }
 
         [HttpGet]
-        public IActionResult Find()
+        public async Task<IActionResult> Find()
         {
             FlightSearchViewModel model = new FlightSearchViewModel();
 
-            string depCity = Request.Query["DepCity"];
-            if (String.IsNullOrEmpty(depCity) == false)
-            {
-                model.DepCity = depCity;
-            }
+            // Optional defaults:
+            // model.DepCity = "New York";
+            // model.ArrCity = "Los Angeles";
 
-            string arrCity = Request.Query["ArrCity"];
-            if (String.IsNullOrEmpty(arrCity) == false)
-            {
-                model.ArrCity = arrCity;
-            }
+            model.Carriers = await flightsApi.GetAllCarriersAsync();
 
-            // Default “broad” filter values
-            if (model.NonStop == false && model.FirstClass == false && model.AirlineID == 0 && model.MaxPrice == 0)
-            {
-                model.NonStop = false;
-                model.FirstClass = false;
-                model.MaxPrice = 10000;
-            }
-
-            return View("~/Views/Flight/Find.cshtml", model);
+            return View("Find", model);
         }
 
         [HttpPost]
@@ -235,32 +285,41 @@ namespace TravelSiteModification.Controllers
         {
             if (!ModelState.IsValid)
             {
+                model.Carriers = await flightsApi.GetAllCarriersAsync();
                 return View("Find", model);
             }
 
-            if (model.AirlineID == 0)
+            FlightRequirements req = new FlightRequirements
             {
-                //AirlineID being 0 should mean any airline here
-            }
-
-            if (model.MaxPrice <= 0)
-            {
-                model.MaxPrice = 10000;
-            }
+                AirlineID = model.AirlineID,
+                MaxPrice = model.MaxPrice,
+                NonStop = model.NonStop,
+                FirstClass = model.FirstClass
+            };
 
             try
             {
-                List<Flight> flights = await flightsApiClient.FindFlightsAsync(model);
+                List<Flight> flights = await flightsApi.FindFlightsAsync(
+                    model.DepCity,
+                    model.DepState,
+                    model.ArrCity,
+                    model.ArrState,
+                    req);
 
-                FlightSearchResultsViewModel viewModel = new FlightSearchResultsViewModel();
-                viewModel.Search = model;
-                viewModel.Flights = flights;
+                model.Flights = flights;
+                model.Carriers = await flightsApi.GetAllCarriersAsync();
 
-                return View("FindResults", viewModel);
+                if (flights.Count == 0)
+                {
+                    model.ErrorMessage = "No flights found for the given criteria.";
+                }
+
+                return View("Find", model);
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(String.Empty, "Error calling Flights API: " + ex.Message);
+                model.ErrorMessage = "Error calling Flights API: " + ex.Message;
+                model.Carriers = await flightsApi.GetAllCarriersAsync();
                 return View("Find", model);
             }
         }
@@ -313,8 +372,11 @@ namespace TravelSiteModification.Controllers
                 insertCmd.Parameters.AddWithValue("@TotalCost", additionalCost);
                 insertCmd.Parameters.AddWithValue("@Status", "Building");
 
-                SqlParameter outputParam = new SqlParameter("@NewPackageID", System.Data.SqlDbType.Int);
-                outputParam.Direction = System.Data.ParameterDirection.Output;
+                SqlParameter outputParam =
+                    new SqlParameter("@NewPackageID", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
                 insertCmd.Parameters.Add(outputParam);
 
                 dbConnect.DoUpdateUsingCmdObj(insertCmd);
@@ -335,8 +397,11 @@ namespace TravelSiteModification.Controllers
 
                 dbConnect.DoUpdateUsingCmdObj(updateCmd);
             }
+
             HttpContext.Session.SetInt32("CurrentPackageID", packageId);
             return packageId;
         }
+
+
     }
 }
