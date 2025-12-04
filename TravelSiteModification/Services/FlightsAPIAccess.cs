@@ -22,9 +22,9 @@ namespace TravelSiteModification.Services
 
         private readonly HttpClient httpClient;
 
-        public FlightsAPIAccess(HttpClient httpClient)
+        public FlightsAPIAccess(HttpClient httpClientParameter)
         {
-            this.httpClient = httpClient;
+            httpClient = httpClientParameter;
         }
 
         /// <summary>
