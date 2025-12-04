@@ -7,6 +7,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession();
 builder.Services.AddDistributedMemoryCache();
+builder.Services.AddControllersWithViews();
 
 builder.Services.AddHttpClient<EventsAPIClient>(client =>
 {
@@ -32,7 +33,10 @@ builder.Services.AddHttpClient<FlightsAPIAccess>(client =>
     }
 });
 
-builder.Services.AddHttpClient<CarAPIService>();
+builder.Services.AddHttpClient<CarAPIService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7116/");
+});
 
 //builder.Services.AddHttpClient<EventsAPIClient>(client =>
 //{

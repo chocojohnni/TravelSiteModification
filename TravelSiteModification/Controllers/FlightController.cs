@@ -230,40 +230,40 @@ namespace TravelSiteModification.Controllers
             return View("~/Views/Flight/Find.cshtml", model);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Find(FlightSearchViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View("Find", model);
-            }
+        //[HttpPost]
+        //public async Task<IActionResult> Find(FlightSearchViewModel model)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return View("Find", model);
+        //    }
 
-            if (model.AirlineID == 0)
-            {
-                //AirlineID being 0 should mean any airline here
-            }
+        //    if (model.AirlineID == 0)
+        //    {
+        //        //AirlineID being 0 should mean any airline here
+        //    }
 
-            if (model.MaxPrice <= 0)
-            {
-                model.MaxPrice = 10000;
-            }
+        //    if (model.MaxPrice <= 0)
+        //    {
+        //        model.MaxPrice = 10000;
+        //    }
 
-            try
-            {
-                List<Flight> flights = await flightsApiClient.FindFlightsAsync(model);
+        //    try
+        //    {
+        //        List<Flight> flights = await flightsApiClient.FindFlightsAsync(model);
 
-                FlightSearchResultsViewModel viewModel = new FlightSearchResultsViewModel();
-                viewModel.Search = model;
-                viewModel.Flights = flights;
+        //        FlightSearchResultsViewModel viewModel = new FlightSearchResultsViewModel();
+        //        viewModel.Search = model;
+        //        viewModel.Flights = flights;
 
-                return View("FindResults", viewModel);
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(String.Empty, "Error calling Flights API: " + ex.Message);
-                return View("Find", model);
-            }
-        }
+        //        return View("FindResults", viewModel);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        ModelState.AddModelError(String.Empty, "Error calling Flights API: " + ex.Message);
+        //        return View("Find", model);
+        //    }
+        //}
 
         private int GetOrCreateOpenVacationPackage(int userId, decimal additionalCost)
         {

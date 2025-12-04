@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using TravelSiteModification.Models;
@@ -10,98 +11,127 @@ namespace TravelSiteModification.Services
     public class CarAPIService
     {
         private readonly HttpClient client;
-        private readonly string baseUrl = "https://localhost:7116/api/RentalCar";
-
-        private const int TravelSiteID = 1;
-        private const string TravelSiteAPIToken = "TEST-TOKEN-123";
 
         public CarAPIService(HttpClient httpClient)
         {
             client = httpClient;
         }
 
-        private static readonly JsonSerializerOptions options =
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-
-        // --------------------------
-        // Get Cars by Agency (GET)
-        // --------------------------
-        public async Task<List<CarApiModel>> GetCarsByAgencyAsync(int agencyId, string city)
+        public async Task<List<CarAPIModel>> FindCarsAsync(string pickup, string dropoff, string carType, decimal minPrice, decimal maxPrice)
         {
             string url =
-                $"{baseUrl}/GetCarsByAgency?" +
-                $"agencyID={agencyId}&" +
-                $"city={Uri.EscapeDataString(city)}";
+                "api/RentalCar/FindCars?pickup=" +
+                Uri.EscapeDataString(pickup) +
+                "&dropoff=" +
+                Uri.EscapeDataString(dropoff) +
+                "&carType=" +
+                Uri.EscapeDataString(carType == null ? "" : carType) +
+                "&minPrice=" +
+                minPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                "&maxPrice=" +
+                maxPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
             HttpResponseMessage response = await client.GetAsync(url);
             string content = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Car API error {(int)response.StatusCode}: {content}");
+                throw new Exception("Car API error " + (int)response.StatusCode + ": " + content);
             }
 
-            List<CarApiModel>? cars =
-                JsonSerializer.Deserialize<List<CarApiModel>>(content, options);
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.PropertyNameCaseInsensitive = true;
 
-            return cars ?? new List<CarApiModel>();
+            List<CarAPIModel> cars = JsonSerializer.Deserialize<List<CarAPIModel>>(content, options);
+
+            if (cars == null)
+            {
+                cars = new List<CarAPIModel>();
+            }
+
+            return cars;
         }
 
-        // --------------------------
-        // Find Cars (GET)
-        // --------------------------
-        public async Task<List<CarApiModel>> FindCarsAsync(
-            string city,
-            string carType,
-            decimal minPrice,
-            decimal maxPrice)
+        public async Task<List<CarAPIModel>> GetCarsByAgencyAsync(int agencyId, string pickup, string dropoff)
         {
             string url =
-                $"{baseUrl}/FindCars?" +
-                $"city={Uri.EscapeDataString(city)}&" +
-                $"carType={Uri.EscapeDataString(carType)}&" +
-                $"minPrice={minPrice}&" +
-                $"maxPrice={maxPrice}";
+                "api/RentalCar/FindCarsByAgency?agencyId=" +
+                agencyId.ToString() +
+                "&pickup=" +
+                Uri.EscapeDataString(pickup) +
+                "&dropoff=" +
+                Uri.EscapeDataString(dropoff) +
+                "&carType=&minPrice=0&maxPrice=10000";
 
             HttpResponseMessage response = await client.GetAsync(url);
             string content = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Car API error {(int)response.StatusCode}: {content}");
+                throw new Exception("Car API error " + (int)response.StatusCode + ": " + content);
             }
 
-            List<CarApiModel>? list =
-                JsonSerializer.Deserialize<List<CarApiModel>>(content, options);
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.PropertyNameCaseInsensitive = true;
 
-            return list ?? new List<CarApiModel>();
+            List<CarAPIModel> cars = JsonSerializer.Deserialize<List<CarAPIModel>>(content, options);
+
+            if (cars == null)
+            {
+                cars = new List<CarAPIModel>();
+            }
+
+            return cars;
         }
 
-        // --------------------------
-        // Reserve Car (POST)
-        // --------------------------
-        public async Task<ReservationResponse?> ReserveCarAsync(ReservationRequest request)
+        public async Task<ReservationResponse> ReserveCarAsync(ReservationRequest request)
         {
-            // Add API required fields
-            request.TravelSiteID = TravelSiteID;
-            request.TravelSiteAPIToken = TravelSiteAPIToken;
+            string json = JsonSerializer.Serialize(request);
+            StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            string jsonBody = JsonSerializer.Serialize(request);
-            var body = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await client.PostAsync("api/RentalCar/Reserve", content);
+            string body = await response.Content.ReadAsStringAsync();
 
-            HttpResponseMessage response = await client.PostAsync($"{baseUrl}/Reserve", body);
-            string content = await response.Content.ReadAsStringAsync();
+            ReservationResponse result = new ReservationResponse();
+            result.Success = false;
+            result.Message = "";
+            result.ReservationID = 0;
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Car API error {(int)response.StatusCode}: {content}");
+                result.Success = false;
+                result.Message = "Car API error " + (int)response.StatusCode + ": " + body;
+                return result;
             }
 
-            ReservationResponse? result =
-                JsonSerializer.Deserialize<ReservationResponse>(content, options);
+            JsonDocument doc = JsonDocument.Parse(body);
+            JsonElement root = doc.RootElement;
+
+            if (root.TryGetProperty("ReservationID", out JsonElement resIdElement))
+            {
+                int reservationId = resIdElement.GetInt32();
+                result.ReservationID = reservationId;
+                if (reservationId > 0)
+                {
+                    result.Success = true;
+                    result.Message = "Reservation successful.";
+                }
+                else
+                {
+                    result.Success = false;
+                    result.Message = "Reservation failed.";
+                }
+            }
+            else if (root.TryGetProperty("Message", out JsonElement msgElement))
+            {
+                result.Success = false;
+                result.Message = msgElement.GetString();
+            }
+            else
+            {
+                result.Success = false;
+                result.Message = "Unknown response from Car API.";
+            }
 
             return result;
         }

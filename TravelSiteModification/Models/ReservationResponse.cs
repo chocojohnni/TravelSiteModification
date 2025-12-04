@@ -2,12 +2,8 @@
 {
     public class ReservationResponse
     {
-        public int ReservationID { get; set; }
+        public bool Success { get; set; }
         public string Message { get; set; }
-
-        public bool Success
-        {
-            get { return ReservationID > 0; }
-        }
+        public int ReservationID { get; set; }
     }
 }
