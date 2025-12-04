@@ -1,6 +1,6 @@
-﻿namespace TravelSiteModification.Models
+﻿namespace CarsAPI.Models
 {
-    public class CarAPIModel
+    public class Car
     {
         public int CarID { get; set; }
         public int AgencyID { get; set; }

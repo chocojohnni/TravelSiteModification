@@ -1,19 +1,24 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
+using System.Threading.Tasks;
 using TravelSiteModification.Models;
-using Utilities;
+using TravelSiteModification.Services;
 
 namespace TravelSiteModification.Controllers
 {
     public class CarsController : Controller
     {
-        // GET: /Cars
-        public IActionResult Index()
+        private readonly CarAPIService carApi;
+
+        public CarsController(CarAPIService apiService)
         {
-            CarSearchViewModel model = BuildBaseSearchModel();
+            carApi = apiService;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            CarSearchViewModel model = BuildSearchModel();
 
             model.PickupLocation = HttpContext.Session.GetString("CarPickupLocation");
             model.DropoffLocation = HttpContext.Session.GetString("CarDropoffLocation");
@@ -26,355 +31,86 @@ namespace TravelSiteModification.Controllers
                 return View(model);
             }
 
-            model.Results = GetCarsByPickupAndDropoff(model.PickupLocation, model.DropoffLocation);
-
-            model.SearchCriteriaMessage =
-                "Showing results for car rentals from <strong>" +
-                FormatCity(model.PickupLocation) +
-                "</strong> to <strong>" +
-                FormatCity(model.DropoffLocation) +
-                "</strong>";
+            model.Results = await LoadCarsFromApi(model.PickupLocation, model.DropoffLocation);
 
             if (model.Results == null || model.Results.Count == 0)
-            {
                 model.ErrorMessage = "No rental cars were found matching your criteria.";
-            }
 
             return View(model);
         }
 
-        // POST: Update search
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Index(CarSearchViewModel model)
+        public IActionResult SearchCars(string pickupLocation, string dropoffLocation, string pickupDate, string dropoffDate)
         {
-            CarSearchViewModel newModel = BuildBaseSearchModel();
+            HttpContext.Session.SetString("CarPickupLocation", pickupLocation);
+            HttpContext.Session.SetString("CarDropoffLocation", dropoffLocation);
+            HttpContext.Session.SetString("CarPickupDate", pickupDate);
+            HttpContext.Session.SetString("CarDropoffDate", dropoffDate);
 
-            newModel.PickupLocation = model.PickupLocation;
-            newModel.DropoffLocation = model.DropoffLocation;
-            newModel.PickupDate = model.PickupDate;
-            newModel.DropoffDate = model.DropoffDate;
-
-            if (string.IsNullOrEmpty(model.PickupLocation) ||
-                string.IsNullOrEmpty(model.DropoffLocation) ||
-                string.IsNullOrEmpty(model.PickupDate) ||
-                string.IsNullOrEmpty(model.DropoffDate))
-            {
-                newModel.ErrorMessage = "Please select valid locations and dates.";
-                return View(newModel);
-            }
-
-            System.DateTime pickup;
-            System.DateTime dropoff;
-
-            bool pickupValid = System.DateTime.TryParse(model.PickupDate, out pickup);
-            bool dropoffValid = System.DateTime.TryParse(model.DropoffDate, out dropoff);
-
-            if (pickupValid && dropoffValid)
-            {
-                if (dropoff <= pickup)
-                {
-                    newModel.ErrorMessage = "Dropoff date must be after the pickup date.";
-                    return View(newModel);
-                }
-            }
-
-            HttpContext.Session.SetString("CarPickupLocation", model.PickupLocation);
-            HttpContext.Session.SetString("CarDropoffLocation", model.DropoffLocation);
-            HttpContext.Session.SetString("CarPickupDate", model.PickupDate);
-            HttpContext.Session.SetString("CarDropoffDate", model.DropoffDate);
-
-            newModel.Results = GetCarsByPickupAndDropoff(model.PickupLocation, model.DropoffLocation);
-
-            newModel.SearchCriteriaMessage =
-                "Showing results for car rentals from <strong>" +
-                FormatCity(model.PickupLocation) +
-                "</strong> to <strong>" +
-                FormatCity(model.DropoffLocation) +
-                "</strong>";
-
-            if (newModel.Results == null || newModel.Results.Count == 0)
-            {
-                newModel.ErrorMessage = "No rental cars were found matching your criteria.";
-            }
-
-            return View(newModel);
+            return RedirectToAction("Index");
         }
 
-        // GET: /Cars/Details
-        public IActionResult Details(int carId, int agencyId)
-        {
-            CarDetailViewModel model = GetCarDetail(carId, agencyId);
-
-            if (model == null)
-            {
-                return NotFound();
-            }
-
-            HttpContext.Session.SetInt32("SelectedCarID", carId);
-
-            return View(model);
-        }
-
-        // ---------------------- Helpers ----------------------
-
-        private CarSearchViewModel BuildBaseSearchModel()
+        private CarSearchViewModel BuildSearchModel()
         {
             CarSearchViewModel model = new CarSearchViewModel();
 
-            List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> locations =
-                new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-
-            Microsoft.AspNetCore.Mvc.Rendering.SelectListItem item;
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "";
-            item.Text = "-- Select City --";
-            locations.Add(item);
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "NYC";
-            item.Text = "New York, NY";
-            locations.Add(item);
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "LAX";
-            item.Text = "Los Angeles, CA";
-            locations.Add(item);
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "MIA";
-            item.Text = "Miami, FL";
-            locations.Add(item);
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "SEA";
-            item.Text = "Seattle, WA";
-            locations.Add(item);
-
-            model.Locations = locations;
+            model.Locations = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+            {
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="", Text="-- Select City --"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="NYC", Text="New York, NY"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="LAX", Text="Los Angeles, CA"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="MIA", Text="Miami, FL"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="SEA", Text="Seattle, WA"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="PHL", Text="Philadelphia, PA"}
+            };
 
             return model;
         }
-
-        private string FormatCity(string code)
+        private async Task<List<CarResultViewModel>> LoadCarsFromApi(string pickup, string dropoff)
         {
-            if (code == "NYC") return "New York, NY";
-            if (code == "LAX") return "Los Angeles, CA";
-            if (code == "MIA") return "Miami, FL";
-            if (code == "SEA") return "Seattle, WA";
-            return code;
-        }
+            CarAPIService api = new CarAPIService(new HttpClient());
 
-        private List<CarResultViewModel> GetCarsByPickupAndDropoff(string pickup, string dropoff)
-        {
+            string pickupCity = ConvertCodeToCityName(pickup);
+            string dropoffCity = ConvertCodeToCityName(dropoff);
+
+            List<CarAPIModel> raw = await api.FindCarsAsync(pickupCity, dropoffCity, "", 0, 10000);
+
             List<CarResultViewModel> list = new List<CarResultViewModel>();
-
-            DBConnect db = new DBConnect();
-            SqlCommand cmd = new SqlCommand();
-
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandText = "GetCarsByPickupAndDropoff";
-            cmd.Parameters.AddWithValue("@PickupLocation", pickup);
-            cmd.Parameters.AddWithValue("@DropoffLocation", dropoff);
-
-            DataSet ds = db.GetDataSetUsingCmdObj(cmd);
-
-            if (ds != null && ds.Tables.Count > 0)
+            int i = 0;
+            while (i < raw.Count)
             {
-                DataTable table = ds.Tables[0];
-                int i = 0;
-                while (i < table.Rows.Count)
-                {
-                    DataRow row = table.Rows[i];
-
-                    CarResultViewModel car = new CarResultViewModel();
-                    car.CarID = int.Parse(row["CarID"].ToString());
-                    car.AgencyID = int.Parse(row["AgencyID"].ToString());
-                    car.CarModel = row["CarModel"].ToString();
-                    car.CarType = row["CarType"].ToString();
-                    car.PricePerDay = decimal.Parse(row["PricePerDay"].ToString());
-                    car.Available = (bool)row["Available"];
-                    car.ImagePath = row["ImagePath"].ToString();
-
-                    list.Add(car);
-
-                    i = i + 1;
-                }
+                list.Add(MapApiCarToResult(raw[i]));
+                i++;
             }
 
             return list;
         }
 
-        private CarDetailViewModel GetCarDetail(int carId, int agencyId)
+        private string ConvertCodeToCityName(string code)
         {
-            DBConnect db = new DBConnect();
-            SqlCommand cmd = new SqlCommand();
-            CarDetailViewModel model = null;
-
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandText = "GetCarAndAgencyDetails";
-            cmd.Parameters.AddWithValue("@CarID", carId);
-
-            DataSet ds = db.GetDataSetUsingCmdObj(cmd);
-
-            if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+            switch (code)
             {
-                DataRow row = ds.Tables[0].Rows[0];
-
-                model = new CarDetailViewModel();
-                model.CarID = carId;
-                model.AgencyID = agencyId;
-                model.CarModel = row["CarModel"].ToString();
-                model.CarType = row["CarType"].ToString();
-                model.PricePerDay = decimal.Parse(row["PricePerDay"].ToString());
-                model.ImagePath = row["ImagePath"].ToString();
-
-                model.AgencyName = row["AgencyName"].ToString();
-                model.AgencyPhone = row["Phone"].ToString();
-                model.AgencyEmail = row["Email"].ToString();
-
-                model.OtherAgencyCars = new List<CarResultViewModel>();
+                case "NYC": return "New York";
+                case "LAX": return "Los Angeles";
+                case "MIA": return "Miami";
+                case "SEA": return "Seattle";
+                case "PHL": return "Philadelphia";
+                default: return code;
             }
-
-            if (model == null)
-            {
-                return null;
-            }
-
-            // GALLERY LOGIC
-            model.GalleryImages = new List<string>();
-
-            if (!string.IsNullOrEmpty(model.ImagePath))
-            {
-                model.GalleryImages.Add(model.ImagePath);
-
-                string extension = System.IO.Path.GetExtension(model.ImagePath);
-                string prefix = model.ImagePath.Replace(extension, "");
-
-                model.GalleryImages.Add(prefix + "_2" + extension);
-                model.GalleryImages.Add(prefix + "_3" + extension);
-            }
-            else
-            {
-                model.GalleryImages.Add("/images/cars/default1.jpg");
-                model.GalleryImages.Add("/images/cars/default2.jpg");
-                model.GalleryImages.Add("/images/cars/default3.jpg");
-            }
-
-
-            // Query other agency cars
-            SqlCommand cmd2 = new SqlCommand();
-            DBConnect db2 = new DBConnect();
-
-            cmd2.CommandType = CommandType.StoredProcedure;
-            cmd2.CommandText = "GetOtherAvailableCarsByAgencyID";
-            cmd2.Parameters.AddWithValue("@AgencyID", agencyId);
-            cmd2.Parameters.AddWithValue("@CarID", carId);
-
-            DataSet ds2 = db2.GetDataSetUsingCmdObj(cmd2);
-
-            if (ds2 != null && ds2.Tables.Count > 0)
-            {
-                DataTable table = ds2.Tables[0];
-                int i = 0;
-
-                while (i < table.Rows.Count)
-                {
-                    DataRow row = table.Rows[i];
-
-                    CarResultViewModel car = new CarResultViewModel();
-                    car.CarID = int.Parse(row["CarID"].ToString());
-                    car.AgencyID = int.Parse(row["AgencyID"].ToString());
-                    car.CarModel = row["CarModel"].ToString();
-                    car.CarType = row["CarType"].ToString();
-                    car.PricePerDay = decimal.Parse(row["PricePerDay"].ToString());
-                    car.Available = true;
-                    car.ImagePath = row["ImagePath"].ToString();
-
-                    model.OtherAgencyCars.Add(car);
-
-                    i = i + 1;
-                }
-            }
-
-            return model;
         }
-
-        private int GetOrCreateOpenVacationPackage(int userId, decimal additionalCost)
+        private CarResultViewModel MapApiCarToResult(CarAPIModel apiCar)
+        {
+            return new CarResultViewModel
             {
-            int packageId = 0;
-
-            int? sessionPackageId = HttpContext.Session.GetInt32("CurrentPackageID");
-            if (sessionPackageId.HasValue)
-            {
-                packageId = sessionPackageId.Value;
-            }
-
-            DBConnect db = new DBConnect();
-
-            if (packageId == 0)
-            {
-                SqlCommand findCmd = new SqlCommand();
-                findCmd.CommandType = CommandType.Text;
-                findCmd.CommandText =
-                    "SELECT TOP 1 PackageID " +
-                    "FROM VacationPackage " +
-                    "WHERE UserID = @UserID AND Status = @Status " +
-                    "ORDER BY DateCreated DESC";
-
-                findCmd.Parameters.AddWithValue("@UserID", userId);
-                findCmd.Parameters.AddWithValue("@Status", "Open");
-
-                DataSet ds = db.GetDataSetUsingCmdObj(findCmd);
-
-                if (ds != null &&
-                    ds.Tables.Count > 0 &&
-                    ds.Tables[0].Rows.Count > 0)
-                {
-                    packageId = Convert.ToInt32(ds.Tables[0].Rows[0]["PackageID"]);
-                }
-            }
-
-            if (packageId == 0)
-            {
-                SqlCommand insertCmd = new SqlCommand();
-                insertCmd.CommandType = CommandType.StoredProcedure;
-                insertCmd.CommandText = "InsertVacationPackage";
-
-                insertCmd.Parameters.AddWithValue("@UserID", userId);
-                insertCmd.Parameters.AddWithValue("@PackageName", "My Vacation Package");
-                insertCmd.Parameters.AddWithValue("@StartDate", DateTime.Today);
-                insertCmd.Parameters.AddWithValue("@EndDate", DateTime.Today.AddDays(7));
-                insertCmd.Parameters.AddWithValue("@TotalCost", additionalCost);
-                insertCmd.Parameters.AddWithValue("@Status", "Open");
-
-                SqlParameter outputParam = new SqlParameter("@NewPackageID", System.Data.SqlDbType.Int);
-                outputParam.Direction = System.Data.ParameterDirection.Output;
-                insertCmd.Parameters.Add(outputParam);
-
-                db.DoUpdateUsingCmdObj(insertCmd);
-
-                packageId = Convert.ToInt32(outputParam.Value);
-            }
-            else
-            {
-                SqlCommand updateCmd = new SqlCommand();
-                updateCmd.CommandType = CommandType.Text;
-                updateCmd.CommandText =
-                    "UPDATE VacationPackage " +
-                    "SET TotalCost = ISNULL(TotalCost, 0) + @Amount " +
-                    "WHERE PackageID = @PackageID";
-
-                updateCmd.Parameters.AddWithValue("@Amount", additionalCost);
-                updateCmd.Parameters.AddWithValue("@PackageID", packageId);
-
-                db.DoUpdateUsingCmdObj(updateCmd);
-            }
-
-            HttpContext.Session.SetInt32("CurrentPackageID", packageId);
-
-            return packageId;
+                CarID = apiCar.CarID,
+                AgencyID = apiCar.AgencyID,
+                CarModel = apiCar.CarModel,
+                CarType = apiCar.CarType,
+                PricePerDay = apiCar.DailyRate,
+                Available = apiCar.Available,
+                ImagePath = apiCar.ImagePath
+            };
         }
     }
 }
