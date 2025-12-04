@@ -20,8 +20,6 @@ namespace TravelSiteModification.Controllers
 
         public IActionResult Index()
         {
-            // You can keep this or redirect to Find():
-            // return RedirectToAction("Find");
             return View();
         }
 
