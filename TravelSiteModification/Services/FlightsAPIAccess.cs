@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using TravelSiteModification.Models;
@@ -14,10 +15,26 @@ namespace TravelSiteModification.Services
     {
         private readonly string baseUrl = "https://cis-iis2.temple.edu/Fall2025/CIS3342_tun31378/WebAPI/api/Flights";
 
-        public string GetBaseUrl() => baseUrl;
+        public string GetBaseUrl()
+        {
+            return baseUrl;
+        }
 
-        // GET carriers for a route
-        public List<Airline> GetCarriers(string depCity, string depState, string arrCity, string arrState)
+        private readonly HttpClient httpClient;
+
+        public FlightsAPIAccess(HttpClient httpClient)
+        {
+            httpClient = httpClient;
+        }
+
+        /// <summary>
+        /// Gets the carriers that operate between a specific route.
+        /// </summary>
+        public async Task<List<Airline>> GetCarriersAsync(
+            string depCity,
+            string depState,
+            string arrCity,
+            string arrState)
         {
             string url =
                 $"{baseUrl}/carriers?depCity={depCity}&depState={depState}&arrCity={arrCity}&arrState={arrState}";
@@ -25,21 +42,23 @@ namespace TravelSiteModification.Services
             Debug.WriteLine("----- GET CARRIERS -----");
             Debug.WriteLine("URL: " + url);
 
-            HttpClient client = new HttpClient();
-            HttpResponseMessage response = client.GetAsync(url).Result;
+            HttpResponseMessage response = await httpClient.GetAsync(url);
+            string rawJson = await response.Content.ReadAsStringAsync();
 
-            string rawJson = response.Content.ReadAsStringAsync().Result;
             Debug.WriteLine("RAW CARRIER RESPONSE: " + rawJson);
 
             if (!response.IsSuccessStatusCode)
+            {
                 return new List<Airline>();
+            }
 
             var apiCarriers = JsonConvert.DeserializeObject<List<dynamic>>(rawJson);
-
             List<Airline> carriers = new List<Airline>();
 
             if (apiCarriers == null)
+            {
                 return carriers;
+            }
 
             foreach (var c in apiCarriers)
             {
@@ -54,61 +73,89 @@ namespace TravelSiteModification.Services
             return carriers;
         }
 
-        public List<Airline> GetAllCarriers()
+        /// <summary>
+        /// Gets all carriers in the system.
+        /// </summary>
+        public async Task<List<Airline>> GetAllCarriersAsync()
         {
             string url = $"{baseUrl}/carriers/all";
 
-            using (HttpClient client = new HttpClient())
+            Debug.WriteLine("----- GET ALL CARRIERS -----");
+            Debug.WriteLine("URL: " + url);
+
+            HttpResponseMessage response = await httpClient.GetAsync(url);
+            string rawJson = await response.Content.ReadAsStringAsync();
+
+            Debug.WriteLine("RAW CARRIER RESPONSE: " + rawJson);
+
+            if (!response.IsSuccessStatusCode)
             {
-                HttpResponseMessage response = client.GetAsync(url).Result;
-
-                if (!response.IsSuccessStatusCode)
-                    return new List<Airline>();
-
-                var json = response.Content.ReadAsStringAsync().Result;
-
-                return JsonConvert.DeserializeObject<List<Airline>>(json) ?? new List<Airline>();
+                return new List<Airline>();
             }
+
+            var carriers =
+                JsonConvert.DeserializeObject<List<Airline>>(rawJson) ?? new List<Airline>();
+
+            return carriers;
         }
 
-        public List<Flight> FindFlights(
+        /// <summary>
+        /// Finds flights between two cities with optional requirements (airline, price, nonstop, first-class).
+        /// Any null property in FlightRequirements is treated as "no filter" for that field.
+        /// </summary>
+        public async Task<List<Flight>> FindFlightsAsync(
             string depCity,
             string depState,
             string arrCity,
             string arrState,
             FlightRequirements requirements)
         {
-            string url = $"{baseUrl}/find?depCity={depCity}&depState={depState}&arrCity={arrCity}&arrState={arrState}";
+            string url =
+                $"{baseUrl}/find?depCity={depCity}&depState={depState}&arrCity={arrCity}&arrState={arrState}";
 
             if (requirements != null)
             {
                 if (requirements.AirlineID != null)
+                {
                     url += $"&AirlineID={requirements.AirlineID}";
+                }
+
                 if (requirements.MaxPrice != null)
+                {
                     url += $"&MaxPrice={requirements.MaxPrice}";
+                }
+
                 if (requirements.NonStop != null)
-                    url += $"&NonStop={requirements.NonStop}";
+                {
+                    url += $"&NonStop={requirements.NonStop.Value.ToString().ToLower()}";
+                }
+
                 if (requirements.FirstClass != null)
-                    url += $"&FirstClass={requirements.FirstClass}";
+                {
+                    url += $"&FirstClass={requirements.FirstClass.Value.ToString().ToLower()}";
+                }
             }
 
             Debug.WriteLine("----- FIND FLIGHTS -----");
             Debug.WriteLine("URL: " + url);
 
-            HttpClient client = new HttpClient();
-            HttpResponseMessage response = client.GetAsync(url).Result;
+            HttpResponseMessage response = await httpClient.GetAsync(url);
+            string rawJson = await response.Content.ReadAsStringAsync();
 
-            string rawJson = response.Content.ReadAsStringAsync().Result;
             Debug.WriteLine("RAW FIND RESPONSE: " + rawJson);
 
             if (!response.IsSuccessStatusCode)
+            {
                 return new List<Flight>();
+            }
 
             var apiFlights = JsonConvert.DeserializeObject<List<dynamic>>(rawJson);
             List<Flight> flights = new List<Flight>();
 
             if (apiFlights == null)
+            {
                 return flights;
+            }
 
             foreach (var f in apiFlights)
             {
@@ -117,17 +164,21 @@ namespace TravelSiteModification.Services
                     FlightID = (int)f.flightID,
                     AirlineID = (int)f.airCarrierID,
                     DepartureCity = (string)f.departureCity,
+                    DepartureState = (string)f.departureState,
                     ArrivalCity = (string)f.arrivalCity,
+                    ArrivalState = (string)f.arrivalState,
                     DepartureTime = (DateTime)f.departureTime,
                     ArrivalTime = (DateTime)f.arrivalTime,
                     Price = (decimal)f.seatPrice,
-                    SeatsAvailable = (int)f.seatsAvailable
+                    SeatsAvailable = (int)f.seatsAvailable,
+                    NonStop = (bool)f.nonStop,
+                    FirstClass = (bool)f.firstClass
                 });
             }
 
             return flights;
         }
 
-        // (You also have GetFlights, GetAllFlights, ReserveFlight if you want them later)
+        // to add a ReserveFlightAsync method that calls /reserve later
     }
 }
