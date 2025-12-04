@@ -24,7 +24,7 @@ namespace TravelSiteModification.Services
 
         public FlightsAPIAccess(HttpClient httpClient)
         {
-            httpClient = httpClient;
+            this.httpClient = httpClient;
         }
 
         /// <summary>
