@@ -126,9 +126,9 @@ namespace TravelSiteModification.Controllers
             string sessionCityCode = HttpContext.Session.GetString("CarPickupLocation");
             string cityName = ConvertToApiCity(sessionCityCode);
 
-            List<CarApiModel> cars = await api.FindCarsAsync(cityName, "", 0, 2000);
+            List<CarAPIModel> cars = await api.FindCarsAsync(cityName, cityName, "", 0, 2000);
 
-            CarApiModel selected = null;
+            CarAPIModel selected = null;
 
             int i = 0;
             while (i < cars.Count)
@@ -182,8 +182,8 @@ namespace TravelSiteModification.Controllers
             ReservationRequest req = new ReservationRequest();
             req.UserID = userId.Value;
             req.CarID = carId;
-            req.PickupDate = pickup.ToString("yyyy-MM-dd");
-            req.DropoffDate = dropoff.ToString("yyyy-MM-dd");
+            req.PickupDate = pickup;
+            req.DropoffDate = dropoff;
             req.TotalAmount = finalPrice;
             req.FirstName = model.FirstName;
             req.LastName = model.LastName ?? "";

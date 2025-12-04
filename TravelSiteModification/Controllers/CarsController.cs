@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TravelSiteModification.Models;
@@ -12,14 +11,14 @@ namespace TravelSiteModification.Controllers
     {
         private readonly CarAPIService carApi;
 
-        public CarsController(CarAPIService api)
+        public CarsController(CarAPIService apiService)
         {
-            carApi = api;
+            carApi = apiService;
         }
 
         public async Task<IActionResult> Index()
         {
-            CarSearchViewModel model = BuildBaseSearchModel();
+            CarSearchViewModel model = BuildSearchModel();
 
             model.PickupLocation = HttpContext.Session.GetString("CarPickupLocation");
             model.DropoffLocation = HttpContext.Session.GetString("CarDropoffLocation");
@@ -34,255 +33,84 @@ namespace TravelSiteModification.Controllers
 
             model.Results = await LoadCarsFromApi(model.PickupLocation, model.DropoffLocation);
 
-            model.SearchCriteriaMessage =
-                "Showing results for car rentals from <strong>" +
-                FormatCity(model.PickupLocation) +
-                "</strong> to <strong>" +
-                FormatCity(model.DropoffLocation) +
-                "</strong>";
-
             if (model.Results == null || model.Results.Count == 0)
-            {
                 model.ErrorMessage = "No rental cars were found matching your criteria.";
-            }
 
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Index(CarSearchViewModel model)
+        public IActionResult SearchCars(string pickupLocation, string dropoffLocation, string pickupDate, string dropoffDate)
         {
-            CarSearchViewModel newModel = BuildBaseSearchModel();
+            HttpContext.Session.SetString("CarPickupLocation", pickupLocation);
+            HttpContext.Session.SetString("CarDropoffLocation", dropoffLocation);
+            HttpContext.Session.SetString("CarPickupDate", pickupDate);
+            HttpContext.Session.SetString("CarDropoffDate", dropoffDate);
 
-            newModel.PickupLocation = model.PickupLocation;
-            newModel.DropoffLocation = model.DropoffLocation;
-            newModel.PickupDate = model.PickupDate;
-            newModel.DropoffDate = model.DropoffDate;
-
-            if (string.IsNullOrEmpty(model.PickupLocation) ||
-                string.IsNullOrEmpty(model.DropoffLocation) ||
-                string.IsNullOrEmpty(model.PickupDate) ||
-                string.IsNullOrEmpty(model.DropoffDate))
-            {
-                newModel.ErrorMessage = "Please select valid locations and dates.";
-                return View(newModel);
-            }
-
-            DateTime pickup;
-            DateTime dropoff;
-
-            bool pickupValid = DateTime.TryParse(model.PickupDate, out pickup);
-            bool dropoffValid = DateTime.TryParse(model.DropoffDate, out dropoff);
-
-            if (pickupValid && dropoffValid)
-            {
-                if (dropoff <= pickup)
-                {
-                    newModel.ErrorMessage = "Dropoff date must be after the pickup date.";
-                    return View(newModel);
-                }
-            }
-
-            HttpContext.Session.SetString("CarPickupLocation", model.PickupLocation);
-            HttpContext.Session.SetString("CarDropoffLocation", model.DropoffLocation);
-            HttpContext.Session.SetString("CarPickupDate", model.PickupDate);
-            HttpContext.Session.SetString("CarDropoffDate", model.DropoffDate);
-
-            newModel.Results = await LoadCarsFromApi(model.PickupLocation, model.DropoffLocation);
-
-            newModel.SearchCriteriaMessage =
-                "Showing results for car rentals from <strong>" +
-                FormatCity(model.PickupLocation) +
-                "</strong> to <strong>" +
-                FormatCity(model.DropoffLocation) +
-                "</strong>";
-
-            if (newModel.Results == null || newModel.Results.Count == 0)
-            {
-                newModel.ErrorMessage = "No rental cars were found matching your criteria.";
-            }
-
-            return View(newModel);
+            return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> Details(int carId, int agencyId)
+        private CarSearchViewModel BuildSearchModel()
         {
-            string pickupCode = HttpContext.Session.GetString("CarPickupLocation");
-            string dropoffCode = HttpContext.Session.GetString("CarDropoffLocation");
+            CarSearchViewModel model = new CarSearchViewModel();
 
-            CarDetailViewModel model = await LoadCarDetailsFromApi(carId, agencyId, pickupCode, dropoffCode);
-
-            if (model == null)
+            model.Locations = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
             {
-                return NotFound();
-            }
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="", Text="-- Select City --"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="NYC", Text="New York, NY"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="LAX", Text="Los Angeles, CA"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="MIA", Text="Miami, FL"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="SEA", Text="Seattle, WA"},
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value="PHL", Text="Philadelphia, PA"}
+            };
 
-            HttpContext.Session.SetInt32("SelectedCarID", carId);
-
-            return View(model);
+            return model;
         }
-
         private async Task<List<CarResultViewModel>> LoadCarsFromApi(string pickup, string dropoff)
         {
+            CarAPIService api = new CarAPIService(new HttpClient());
+
+            string pickupCity = ConvertCodeToCityName(pickup);
+            string dropoffCity = ConvertCodeToCityName(dropoff);
+
+            List<CarAPIModel> raw = await api.FindCarsAsync(pickupCity, dropoffCity, "", 0, 10000);
+
             List<CarResultViewModel> list = new List<CarResultViewModel>();
-
-            List<CarAPIModel> raw = await carApi.FindCarsAsync(pickup, dropoff, "", 0, 10000);
-
-            if (raw == null || raw.Count == 0)
-            {
-                return list;
-            }
-
             int i = 0;
             while (i < raw.Count)
             {
-                CarAPIModel api = raw[i];
-                CarResultViewModel car = new CarResultViewModel();
-
-                car.CarID = api.CarID;
-                car.AgencyID = api.AgencyID;
-                car.CarModel = api.CarModel;
-                car.CarType = api.CarType;
-                car.PricePerDay = api.DailyRate;
-                car.Available = api.Available;
-                car.ImagePath = api.ImagePath;
-
-                list.Add(car);
-                i = i + 1;
+                list.Add(MapApiCarToResult(raw[i]));
+                i++;
             }
 
             return list;
         }
 
-        private async Task<CarDetailViewModel> LoadCarDetailsFromApi(int carId, int agencyId, string pickup, string dropoff)
+        private string ConvertCodeToCityName(string code)
         {
-            List<CarAPIModel> cars = await carApi.GetCarsByAgencyAsync(agencyId, pickup, dropoff);
-
-            if (cars == null || cars.Count == 0)
+            switch (code)
             {
-                return null;
+                case "NYC": return "New York";
+                case "LAX": return "Los Angeles";
+                case "MIA": return "Miami";
+                case "SEA": return "Seattle";
+                case "PHL": return "Philadelphia";
+                default: return code;
             }
-
-            int i = 0;
-            while (i < cars.Count)
+        }
+        private CarResultViewModel MapApiCarToResult(CarAPIModel apiCar)
+        {
+            return new CarResultViewModel
             {
-                CarAPIModel c = cars[i];
-
-                if (c.CarID == carId)
-                {
-                    CarDetailViewModel model = new CarDetailViewModel();
-                    model.CarID = c.CarID;
-                    model.AgencyID = c.AgencyID;
-                    model.CarModel = c.CarModel;
-                    model.CarType = c.CarType;
-                    model.PricePerDay = c.DailyRate;
-                    model.ImagePath = c.ImagePath;
-
-                    model.GalleryImages = new List<string>();
-
-                    if (!string.IsNullOrEmpty(c.ImagePath))
-                    {
-                        model.GalleryImages.Add(c.ImagePath);
-
-                        string ext = System.IO.Path.GetExtension(c.ImagePath);
-                        string prefix = c.ImagePath.Replace(ext, "");
-
-                        model.GalleryImages.Add(prefix + "_2" + ext);
-                        model.GalleryImages.Add(prefix + "_3" + ext);
-                    }
-                    else
-                    {
-                        model.GalleryImages.Add("/images/cars/default1.jpg");
-                        model.GalleryImages.Add("/images/cars/default2.jpg");
-                        model.GalleryImages.Add("/images/cars/default3.jpg");
-                    }
-
-                    model.OtherAgencyCars = new List<CarResultViewModel>();
-
-                    int j = 0;
-                    while (j < cars.Count)
-                    {
-                        CarAPIModel oc = cars[j];
-
-                        if (oc.CarID != carId)
-                        {
-                            CarResultViewModel item = new CarResultViewModel();
-                            item.CarID = oc.CarID;
-                            item.AgencyID = oc.AgencyID;
-                            item.CarModel = oc.CarModel;
-                            item.CarType = oc.CarType;
-                            item.PricePerDay = oc.DailyRate;
-                            item.Available = oc.Available;
-                            item.ImagePath = oc.ImagePath;
-
-                            model.OtherAgencyCars.Add(item);
-                        }
-
-                        j = j + 1;
-                    }
-
-                    return model;
-                }
-
-                i = i + 1;
-            }
-
-            return null;
-        }
-
-        private string FormatCity(string code)
-        {
-            if (code == "NYC") return "New York, NY";
-            if (code == "LAX") return "Los Angeles, CA";
-            if (code == "MIA") return "Miami, FL";
-            if (code == "SEA") return "Seattle, WA";
-            if (code == "PHL") return "Philadelphia, PA";
-            return code;
-        }
-
-        private CarSearchViewModel BuildBaseSearchModel()
-        {
-            CarSearchViewModel model = new CarSearchViewModel();
-
-            List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> locations =
-                new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-
-            Microsoft.AspNetCore.Mvc.Rendering.SelectListItem item;
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "";
-            item.Text = "-- Select City --";
-            locations.Add(item);
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "NYC";
-            item.Text = "New York, NY";
-            locations.Add(item);
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "LAX";
-            item.Text = "Los Angeles, CA";
-            locations.Add(item);
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "MIA";
-            item.Text = "Miami, FL";
-            locations.Add(item);
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "SEA";
-            item.Text = "Seattle, WA";
-            locations.Add(item);
-
-            item = new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem();
-            item.Value = "PHL";
-            item.Text = "Philadelphia, PA";
-            locations.Add(item);
-
-            model.Locations = locations;
-
-            return model;
+                CarID = apiCar.CarID,
+                AgencyID = apiCar.AgencyID,
+                CarModel = apiCar.CarModel,
+                CarType = apiCar.CarType,
+                PricePerDay = apiCar.DailyRate,
+                Available = apiCar.Available,
+                ImagePath = apiCar.ImagePath
+            };
         }
     }
 }

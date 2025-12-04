@@ -16,8 +16,11 @@ namespace CarWebAPI.Controllers
 
         [HttpGet]
         [Route("FindCars")]
-        public List<Car> FindCars(string pickup, string dropoff, string carType, decimal minPrice, decimal maxPrice)
+        public List<Car> FindCars(string city, string? carType, decimal minPrice, decimal maxPrice)
         {
+            if (string.IsNullOrWhiteSpace(carType))
+                carType = "";
+
             List<Car> cars = new List<Car>();
 
             using (SqlConnection conn = new SqlConnection(connectionString))
@@ -26,8 +29,7 @@ namespace CarWebAPI.Controllers
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    cmd.Parameters.AddWithValue("@PickupLocationCode", pickup);
-                    cmd.Parameters.AddWithValue("@DropoffLocationCode", dropoff);
+                    cmd.Parameters.AddWithValue("@City", city);
                     cmd.Parameters.AddWithValue("@CarType", carType);
                     cmd.Parameters.AddWithValue("@MinPrice", minPrice);
                     cmd.Parameters.AddWithValue("@MaxPrice", maxPrice);
@@ -39,17 +41,17 @@ namespace CarWebAPI.Controllers
                     {
                         while (reader.Read())
                         {
-                            Car car = new Car();
-                            car.CarID = Convert.ToInt32(reader["CarID"]);
-                            car.AgencyID = Convert.ToInt32(reader["AgencyID"]);
-                            car.CarModel = reader["CarModel"].ToString();
-                            car.CarType = reader["CarType"].ToString();
-                            car.DailyRate = Convert.ToDecimal(reader["DailyRate"]);
-                            car.Available = Convert.ToBoolean(reader["Available"]);
-                            car.PickupLocationCode = reader["PickupLocationCode"].ToString();
-                            car.DropoffLocationCode = reader["DropoffLocationCode"].ToString();
-                            car.ImagePath = reader["ImagePath"].ToString();
-
+                            Car car = new Car
+                            {
+                                CarID = Convert.ToInt32(reader["CarID"]),
+                                AgencyID = Convert.ToInt32(reader["AgencyID"]),
+                                CarModel = reader["CarModel"].ToString(),
+                                CarType = reader["CarType"].ToString(),
+                                DailyRate = Convert.ToDecimal(reader["DailyRate"]),
+                                Available = Convert.ToBoolean(reader["Available"]),
+                                PickupLocationCode = reader["PickupLocationCode"].ToString(),
+                                ImagePath = reader["ImagePath"].ToString()
+                            };
                             cars.Add(car);
                         }
                     }
@@ -58,6 +60,7 @@ namespace CarWebAPI.Controllers
 
             return cars;
         }
+
 
         [HttpGet]
         [Route("FindCarsByAgency")]
