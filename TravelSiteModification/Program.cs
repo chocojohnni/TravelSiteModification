@@ -26,7 +26,7 @@ builder.Services.AddHttpClient<FlightsAPIAccess>(client =>
 
 builder.Services.AddHttpClient<FlightsAPIAccess>(client =>
 {
-    var baseUrl = builder.Configuration["FlightsApi:BaseUrl"];
+    string baseUrl = builder.Configuration["FlightsApi:BaseUrl"];
     if (!string.IsNullOrEmpty(baseUrl))
     {
         client.BaseAddress = new Uri(baseUrl);

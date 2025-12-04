@@ -11,11 +11,13 @@ namespace TravelSiteModification.Controllers
     {
         private readonly DBConnect db;
         private readonly FlightsAPIAccess flightsApi;
+        private readonly IConfiguration appConfiguration;
 
-        public FlightController(FlightsAPIAccess flightApiAccess)
+        public FlightController(FlightsAPIAccess flightApiAccess, IConfiguration appConfigurationParameter)
         {
             db = new DBConnect();
             flightsApi = flightApiAccess;
+            appConfiguration = appConfigurationParameter;
         }
 
         public IActionResult Index()
@@ -199,8 +201,8 @@ namespace TravelSiteModification.Controllers
                     try
                     {
                         // Use real TravelSiteID and TravelSiteAPIToken
-                        const int travelSiteId = 1;                 // TODO: replace with TravelSiteID
-                        const string travelSiteToken = "TOKEN_HERE"; // TODO: replace with API token
+                        int travelSiteId = Convert.ToInt32(appConfiguration["FlightsApi:TravelSiteID"]);
+                        string travelSiteToken = appConfiguration["FlightsApi:TravelSiteToken"];
 
                         FlightReserveRequest apiRequest = new FlightReserveRequest
                         {
