@@ -204,5 +204,33 @@ namespace TravelSiteModification.Services
             }
             return true;
         }
+
+        public async Task<List<FlightImage>> GetFlightImagesAsync(int flightId)
+        {
+            string url = baseUrl + "/" + flightId.ToString() + "/images";
+
+            Debug.WriteLine("----- GET FLIGHT IMAGES -----");
+            Debug.WriteLine("URL: " + url);
+
+            HttpResponseMessage response = await httpClient.GetAsync(url);
+            string rawJson = await response.Content.ReadAsStringAsync();
+
+            Debug.WriteLine("RAW FLIGHT IMAGES RESPONSE: " + rawJson);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new List<FlightImage>();
+            }
+
+            List<FlightImage> images =
+                JsonConvert.DeserializeObject<List<FlightImage>>(rawJson);
+
+            if (images == null)
+            {
+                images = new List<FlightImage>();
+            }
+
+            return images;
+        }
     }
 }
