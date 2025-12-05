@@ -12,7 +12,7 @@ namespace CarWebAPI.Controllers
     [Route("api/[controller]")]
     public class RentalCarController : ControllerBase
     {
-        private readonly string connectionString = "server=cis-mssql1.temple.edu;Database=fa25_3342_tul38243;User id=tul38243;Password=ohCh4ivaiN;Encrypt=True;TrustServerCertificate=True;";
+        private readonly String connectionString = "server=127.0.0.1,5555;Database=fa25_3342_tul38243;User id=tul38243;Password=ohCh4ivaiN;Encrypt=True;TrustServerCertificate=True;";
 
         [HttpGet]
         [Route("FindCars")]

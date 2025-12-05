@@ -122,24 +122,12 @@ namespace TravelSiteModification.Controllers
         {
             CarBookingViewModel model = new CarBookingViewModel();
 
-            // Step 1: Get all cars in city (fallback from CarsController logic)
+            // Step 1: Get all cars in city
             string sessionCityCode = HttpContext.Session.GetString("CarPickupLocation");
-            string cityName = ConvertToApiCity(sessionCityCode);
+            string cityCode = sessionCityCode;
+            List<CarAPIModel> cars = await api.FindCarsAsync(cityCode, "", 0, 2000);
 
-            List<CarAPIModel> cars = await api.FindCarsAsync(cityName, cityName, "", 0, 2000);
-
-            CarAPIModel selected = null;
-
-            int i = 0;
-            while (i < cars.Count)
-            {
-                if (cars[i].CarID == carId)
-                {
-                    selected = cars[i];
-                    break;
-                }
-                i++;
-            }
+            CarAPIModel selected = cars.Find(c => c.CarID == carId);
 
             if (selected == null)
             {
@@ -155,7 +143,7 @@ namespace TravelSiteModification.Controllers
             model.SelectedCarID = carId;
             model.CarModel = selected.CarModel;
             model.CarType = selected.CarType;
-            model.AgencyName = ""; // API doesn't return this
+            model.AgencyName = "";
             model.PickupLocation = selected.PickupLocationCode;
             model.DropoffLocation = selected.DropoffLocationCode;
             model.PickupDateDisplay = pickup.ToShortDateString();
@@ -165,6 +153,7 @@ namespace TravelSiteModification.Controllers
 
             return model;
         }
+
 
         // -------------------------------------------------------------------
         // API Reservation Submission
