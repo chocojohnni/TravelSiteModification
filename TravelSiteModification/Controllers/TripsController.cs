@@ -41,6 +41,22 @@ namespace TravelSiteModification.Controllers
             SpendingSummary spendingSummary = spendingData.GetUserSpendingSummary(userId.Value);
             ViewBag.SpendingSummary = spendingSummary;
 
+            if (TempData["PackageConfirmationMessage"] != null)
+            {
+                // Clear the categories
+                model.HotelBookings.Clear();
+                model.FlightBookings.Clear();
+                model.CarBookings.Clear();
+                model.EventBookings.Clear();
+
+                model.HasHotelBookings = false;
+                model.HasFlightBookings = false;
+                model.HasCarBookings = false;
+                model.HasEventBookings = false;
+
+                ViewBag.PackageConfirmationMessage = TempData["PackageConfirmationMessage"];
+            }
+
             return View(model);
         }
 
