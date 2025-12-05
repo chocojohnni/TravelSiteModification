@@ -64,12 +64,6 @@
                     @if (!string.IsNullOrEmpty(firstName))
                     {
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Ticketmaster" asp-action="Index">
-                                Ticketmaster Events
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
                             <a class="nav-link text-dark fw-semibold"
                                asp-controller="Trips"
                                asp-action="Index">
@@ -79,8 +73,8 @@
 
                         <li class="nav-item">
                             <a class="nav-link text-dark fw-semibold"
-                               asp-controller="Account"
-                               asp-action="Profile">
+                               asp-controller="Profile"
+                               asp-action="Edit">
                                 My Profile
                             </a>
                         </li>
