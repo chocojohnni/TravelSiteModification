@@ -219,5 +219,79 @@ namespace EventsWebAPI.Controllers
                 return StatusCode(500, "Server error: " + ex.Message);
             }
         }
+
+        /// <summary>
+        /// Gets the seating chart for a specific event.
+        /// </summary>
+        /// <param name="eventId">EventID from EventAttraction.</param>
+        [HttpGet("Seats")]
+        [Produces("application/json")]
+        public IActionResult GetSeats(int eventId)
+        {
+            try
+            {
+                if (eventId <= 0)
+                {
+                    return BadRequest("eventId is required and must be positive.");
+                }
+
+                List<EventSeat> seats = eventsData.GetSeatsForEvent(eventId);
+
+                return Ok(seats);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Server error: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Creates a reservation for a specific event with explicit seat selection.
+        /// </summary>
+        /// <remarks>
+        /// This is additive; the existing /api/Event/Reserve endpoint still works
+        /// for non-seat-based reservations.
+        /// </remarks>
+        [HttpPost("ReserveWithSeats")]
+        [Produces("application/json")]
+        public IActionResult ReserveWithSeats([FromBody] ReserveWithSeats dto)
+        {
+            try
+            {
+                if (dto == null)
+                {
+                    return BadRequest("Missing request body.");
+                }
+
+                if (dto.EventOfferingId <= 0)
+                {
+                    return BadRequest("EventOfferingId must be provided.");
+                }
+
+                if (dto.SeatIds == null || dto.SeatIds.Count == 0)
+                {
+                    return BadRequest("At least one seat must be selected.");
+                }
+
+                int reservationId = eventsData.ReserveWithSeats(
+                    dto.EventOfferingId,
+                    dto.SeatIds,
+                    dto.CustomerName,
+                    dto.CustomerEmail,
+                    dto.TravelSiteId,
+                    dto.Token);
+
+                if (reservationId <= 0)
+                {
+                    return StatusCode(500, "Reservation failed.");
+                }
+
+                return Ok(new { ReservationId = reservationId });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Server error: " + ex.Message);
+            }
+        }
     }
 }
