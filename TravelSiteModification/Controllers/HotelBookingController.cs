@@ -9,7 +9,6 @@ namespace TravelSiteModification.Controllers
 {
     public class HotelBookingController : Controller
     {
-        // GET: /HotelBooking/Index
         public IActionResult Index()
         {
             int? hotelId = HttpContext.Session.GetInt32("SelectedHotelID");
@@ -24,38 +23,46 @@ namespace TravelSiteModification.Controllers
             string checkIn = HttpContext.Session.GetString("CheckInDate");
             string checkOut = HttpContext.Session.GetString("CheckOutDate");
 
-            var booking = new HotelBookingViewModel();
+            HotelBookingViewModel booking = new HotelBookingViewModel();
 
             try
             {
                 DBConnect db = new DBConnect();
 
-                // Retrieve hotel details
-                SqlCommand hotelCmd = new SqlCommand();
-                hotelCmd.CommandType = CommandType.StoredProcedure;
-                hotelCmd.CommandText = "GetHotelsByID";
-                hotelCmd.Parameters.AddWithValue("@HotelID", hotelId);
+                SqlCommand hotelCmd = new SqlCommand
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandText = "GetHotelsByID"
+                };
+                hotelCmd.Parameters.AddWithValue("@HotelID", hotelId.Value);
 
                 DataSet hds = db.GetDataSetUsingCmdObj(hotelCmd);
+
                 if (hds.Tables.Count > 0 && hds.Tables[0].Rows.Count > 0)
                 {
-                    var row = hds.Tables[0].Rows[0];
+                    DataRow row = hds.Tables[0].Rows[0];
+
+                    booking.HotelID = hotelId.Value;
                     booking.HotelName = row["HotelName"].ToString();
                     booking.HotelAddress = row["Address"].ToString();
                     booking.HotelPhone = row["Phone"].ToString();
                     booking.HotelEmail = row["Email"].ToString();
                 }
 
-                // Retrieve room details
-                SqlCommand roomCmd = new SqlCommand();
-                roomCmd.CommandType = CommandType.StoredProcedure;
-                roomCmd.CommandText = "GetRoomByID";  
-                roomCmd.Parameters.AddWithValue("@RoomID", roomId);
+                SqlCommand roomCmd = new SqlCommand
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandText = "GetRoomByID"
+                };
+                roomCmd.Parameters.AddWithValue("@RoomID", roomId.Value);
 
                 DataSet rds = db.GetDataSetUsingCmdObj(roomCmd);
+
                 if (rds.Tables.Count > 0 && rds.Tables[0].Rows.Count > 0)
                 {
-                    var row = rds.Tables[0].Rows[0];
+                    DataRow row = rds.Tables[0].Rows[0];
+
+                    booking.RoomID = roomId.Value;
                     booking.RoomType = row["RoomType"].ToString();
                     booking.PricePerNight = Convert.ToDecimal(row["Price"]);
                 }
@@ -63,7 +70,6 @@ namespace TravelSiteModification.Controllers
                 booking.CheckInDate = checkIn;
                 booking.CheckOutDate = checkOut;
 
-                // Calculate total nights
                 if (DateTime.TryParse(checkIn, out DateTime ci) &&
                     DateTime.TryParse(checkOut, out DateTime co))
                 {
@@ -80,7 +86,17 @@ namespace TravelSiteModification.Controllers
             return View(booking);
         }
 
-        // POST: HotelBooking/Confirm
+        [HttpPost]
+        public IActionResult SelectRoom(int hotelId, int roomId, string checkInDate, string checkOutDate)
+        {
+            HttpContext.Session.SetInt32("SelectedHotelID", hotelId);
+            HttpContext.Session.SetInt32("SelectedRoomID", roomId);
+            HttpContext.Session.SetString("CheckInDate", checkInDate);
+            HttpContext.Session.SetString("CheckOutDate", checkOutDate);
+
+            return RedirectToAction("Index"); // Goes to HotelBooking/Index
+        }
+
         [HttpPost]
         public IActionResult ConfirmBooking(HotelBookingViewModel model)
         {
@@ -89,14 +105,12 @@ namespace TravelSiteModification.Controllers
             string checkIn = HttpContext.Session.GetString("CheckInDate");
             string checkOut = HttpContext.Session.GetString("CheckOutDate");
 
-            // Make sure we have the required session info
-            if (hotelId == null || roomId == null || string.IsNullOrEmpty(checkIn) || string.IsNullOrEmpty(checkOut))
+            if (hotelId == null || roomId == null || checkIn == null || checkOut == null)
             {
                 TempData["Error"] = "Missing booking information.";
                 return RedirectToAction("Index", "Hotel");
             }
 
-            // Make sure the user is logged in (needed for vacation package)
             int? userIdNullable = HttpContext.Session.GetInt32("UserID");
             if (!userIdNullable.HasValue)
             {
@@ -110,15 +124,17 @@ namespace TravelSiteModification.Controllers
             {
                 DBConnect db = new DBConnect();
 
-                SqlCommand cmd = new SqlCommand();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = "AddHotelBooking";
+                SqlCommand cmd = new SqlCommand
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandText = "AddHotelBooking"
+                };
 
                 cmd.Parameters.AddWithValue("@HotelID", hotelId.Value);
                 cmd.Parameters.AddWithValue("@RoomID", roomId.Value);
-                cmd.Parameters.AddWithValue("@FirstName", model.FirstName ?? string.Empty);
-                cmd.Parameters.AddWithValue("@LastName", model.LastName ?? string.Empty);
-                cmd.Parameters.AddWithValue("@Email", model.Email ?? string.Empty);
+                cmd.Parameters.AddWithValue("@FirstName", model.FirstName ?? "");
+                cmd.Parameters.AddWithValue("@LastName", model.LastName ?? "");
+                cmd.Parameters.AddWithValue("@Email", model.Email ?? "");
                 cmd.Parameters.AddWithValue("@BookingDate", DateTime.Now);
                 cmd.Parameters.AddWithValue("@TotalPrice", model.TotalPrice);
 
@@ -134,43 +150,35 @@ namespace TravelSiteModification.Controllers
 
                 if (result > 0)
                 {
-                    // Add this hotel to package
-                    try
+                    // Add to vacation package system
+                    int packageId = GetOrCreateOpenVacationPackage(userId, model.TotalPrice);
+
+                    SqlCommand pkgCmd = new SqlCommand
                     {
-                        decimal costToAdd = model.TotalPrice;
+                        CommandType = CommandType.StoredProcedure,
+                        CommandText = "InsertPackageHotel"
+                    };
+                    pkgCmd.Parameters.AddWithValue("@PackageID", packageId);
+                    pkgCmd.Parameters.AddWithValue("@HotelID", hotelId.Value);
+                    pkgCmd.Parameters.AddWithValue("@RoomID", roomId.Value);
 
-                        int packageId = GetOrCreateOpenVacationPackage(userId, costToAdd);
+                    db.DoUpdateUsingCmdObj(pkgCmd);
 
-                        SqlCommand pkgCmd = new SqlCommand();
-                        pkgCmd.CommandType = CommandType.StoredProcedure;
-                        pkgCmd.CommandText = "InsertPackageHotel";
-                        pkgCmd.Parameters.AddWithValue("@PackageID", packageId);
-                        pkgCmd.Parameters.AddWithValue("@HotelID", hotelId.Value);
-                        pkgCmd.Parameters.AddWithValue("@RoomID", roomId.Value);
-
-                        db.DoUpdateUsingCmdObj(pkgCmd);
-
-                        TempData["Success"] = "Booking confirmed and added to your vacation package!";
-                    }
-                    catch (Exception pkgEx)
-                    {
-                        TempData["Success"] =
-                            "Booking confirmed, but the hotel could not be added to your vacation package: "
-                            + pkgEx.Message;
-                    }
-                    HttpContext.Session.Remove("SelectedHotelID");
-                    HttpContext.Session.Remove("SelectedRoomID");
-                    HttpContext.Session.Remove("RoomPrice");
-                    HttpContext.Session.Remove("CheckInDate");
-                    HttpContext.Session.Remove("CheckOutDate");
-
-                    return RedirectToAction("Receipt");
+                    TempData["Success"] = "Booking confirmed and added to your vacation package!";
                 }
                 else
                 {
                     TempData["Error"] = "Booking failed.";
                     return RedirectToAction("Index");
                 }
+
+                // Clear session
+                HttpContext.Session.Remove("SelectedHotelID");
+                HttpContext.Session.Remove("SelectedRoomID");
+                HttpContext.Session.Remove("CheckInDate");
+                HttpContext.Session.Remove("CheckOutDate");
+
+                return RedirectToAction("Receipt");
             }
             catch (Exception ex)
             {
@@ -179,98 +187,86 @@ namespace TravelSiteModification.Controllers
             }
         }
 
-        [HttpPost]
-        public IActionResult SelectRoom(int roomId, string checkInDate, string checkOutDate)
-        {
-            // Store selected room + dates in session
-            HttpContext.Session.SetInt32("SelectedRoomID", roomId);
-            HttpContext.Session.SetString("CheckInDate", checkInDate);
-            HttpContext.Session.SetString("CheckOutDate", checkOutDate);
-
-            // Redirect user to the booking page
-            return RedirectToAction("Index", "HotelBooking");
-        }
-
-
-        // GET: HotelBooking/Receipt
-        public IActionResult Receipt()
-        {
-            return View();
-        }
-
         private int GetOrCreateOpenVacationPackage(int userId, decimal additionalCost)
         {
-            int packageId = 0;
+            int packageId = HttpContext.Session.GetInt32("CurrentPackageID") ?? 0;
 
-            int? sessionPackageId = HttpContext.Session.GetInt32("CurrentPackageID");
-            if (sessionPackageId.HasValue)
-            {
-                packageId = sessionPackageId.Value;
-            }
+            DBConnect db = new DBConnect();
 
-            DBConnect dbConnect = new DBConnect();
-
+            // --- FIND EXISTING OPEN PACKAGE ---
             if (packageId == 0)
             {
-                SqlCommand findCmd = new SqlCommand();
-                findCmd.CommandType = CommandType.Text;
-                findCmd.CommandText =
-                    "SELECT TOP 1 PackageID " +
-                    "FROM VacationPackage " +
-                    "WHERE UserID = @UserID AND Status = @Status " +
-                    "ORDER BY DateCreated DESC";
+                SqlCommand findCmd = new SqlCommand
+                {
+                    CommandType = CommandType.Text,
+                    CommandText =
+                    @"SELECT TOP 1 PackageID 
+                      FROM VacationPackage 
+                      WHERE UserID = @UserID AND Status = 'Open'
+                      ORDER BY DateCreated DESC"
+                };
 
                 findCmd.Parameters.AddWithValue("@UserID", userId);
-                findCmd.Parameters.AddWithValue("@Status", "Building");
 
-                DataSet ds = dbConnect.GetDataSetUsingCmdObj(findCmd);
+                DataSet ds = db.GetDataSetUsingCmdObj(findCmd);
 
-                if (ds != null &&
-                    ds.Tables.Count > 0 &&
-                    ds.Tables[0].Rows.Count > 0)
+                if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
                 {
                     packageId = Convert.ToInt32(ds.Tables[0].Rows[0]["PackageID"]);
                 }
             }
 
+            // --- CREATE NEW PACKAGE IF NONE FOUND ---
             if (packageId == 0)
             {
-                SqlCommand insertCmd = new SqlCommand();
-                insertCmd.CommandType = CommandType.StoredProcedure;
-                insertCmd.CommandText = "InsertVacationPackage";
+                SqlCommand insertCmd = new SqlCommand
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandText = "InsertVacationPackage"
+                };
 
                 insertCmd.Parameters.AddWithValue("@UserID", userId);
                 insertCmd.Parameters.AddWithValue("@PackageName", "My Vacation Package");
                 insertCmd.Parameters.AddWithValue("@StartDate", DateTime.Today);
                 insertCmd.Parameters.AddWithValue("@EndDate", DateTime.Today.AddDays(7));
                 insertCmd.Parameters.AddWithValue("@TotalCost", additionalCost);
-                insertCmd.Parameters.AddWithValue("@Status", "Building");
+                insertCmd.Parameters.AddWithValue("@Status", "Open");
 
-                SqlParameter outputParam = new SqlParameter("@NewPackageID", System.Data.SqlDbType.Int);
-                outputParam.Direction = System.Data.ParameterDirection.Output;
+                SqlParameter outputParam = new SqlParameter("@NewPackageID", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
                 insertCmd.Parameters.Add(outputParam);
 
-                dbConnect.DoUpdateUsingCmdObj(insertCmd);
+                db.DoUpdateUsingCmdObj(insertCmd);
 
                 packageId = Convert.ToInt32(outputParam.Value);
             }
             else
             {
-                SqlCommand updateCmd = new SqlCommand();
-                updateCmd.CommandType = CommandType.Text;
-                updateCmd.CommandText =
-                    "UPDATE VacationPackage " +
-                    "SET TotalCost = TotalCost + @Amount " +
-                    "WHERE PackageID = @PackageID";
+                // --- UPDATE EXISTING PACKAGE ---
+                SqlCommand updateCmd = new SqlCommand
+                {
+                    CommandType = CommandType.Text,
+                    CommandText =
+                    @"UPDATE VacationPackage 
+                      SET TotalCost = TotalCost + @Amount 
+                      WHERE PackageID = @PackageID"
+                };
 
                 updateCmd.Parameters.AddWithValue("@Amount", additionalCost);
                 updateCmd.Parameters.AddWithValue("@PackageID", packageId);
 
-                dbConnect.DoUpdateUsingCmdObj(updateCmd);
+                db.DoUpdateUsingCmdObj(updateCmd);
             }
+
             HttpContext.Session.SetInt32("CurrentPackageID", packageId);
             return packageId;
         }
+
+        public IActionResult Receipt()
+        {
+            return View();
+        }
     }
 }
-

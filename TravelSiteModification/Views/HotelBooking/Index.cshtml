@@ -1,5 +1,4 @@
 ﻿@model TravelSiteModification.Models.HotelBookingViewModel
-
 @{
     ViewData["Title"] = "Book Hotel Room";
 }
@@ -14,13 +13,14 @@
         <h4 class="fw-bold">Selected Details</h4>
         <p><strong>Hotel:</strong> @Model.HotelName</p>
         <p><strong>Room Type:</strong> @Model.RoomType</p>
-        <p><strong>Capacity:</strong> @Model.Capacity</p>
+        <p><strong>Capacity:</strong> @(Model.Capacity ?? "N/A")</p>
         <p><strong>Price Per Night:</strong> @Model.PricePerNight.ToString("C")</p>
         <p><strong>Check-In:</strong> @Model.CheckInDate</p>
         <p><strong>Check-Out:</strong> @Model.CheckOutDate</p>
     </div>
 
-    <form method="post">
+    <!-- FORM: Confirm Booking -->
+    <form asp-action="ConfirmBooking" asp-controller="HotelBooking" method="post">
 
         <div class="row mb-4">
 
@@ -55,7 +55,7 @@
         </div>
 
         <!-- Submit -->
-        <button asp-action="Index" class="btn btn-primary btn-lg">Confirm & Book Room</button>
+        <button type="submit" class="btn btn-primary btn-lg">Confirm & Book Room</button>
 
         @if (Model.BookingSuccessful)
         {
@@ -68,8 +68,8 @@
 
     </form>
 
-    <!-- Back -->
-    <form asp-action="Back" method="post" class="mt-4">
+    <!-- Back to Rooms -->
+    <form asp-action="Details" asp-controller="Hotel" method="get" class="mt-4">
         <input type="hidden" name="hotelId" value="@Model.HotelID" />
         <button class="btn btn-secondary">&larr; Back to Room Selection</button>
     </form>
