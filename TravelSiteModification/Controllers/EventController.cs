@@ -112,6 +112,19 @@ namespace TravelSiteModification.Controllers
             ViewBag.PricePerTicket = price;
             ViewBag.ImagePath = row["ImagePath"].ToString();
 
+            List<EventSeat> seats = new List<EventSeat>();
+
+            try
+            {
+                seats = eventsApiClient.GetSeatsForEventAsync(eventId).Result;
+            }
+            catch
+            {
+                seats = new List<EventSeat>();
+            }
+
+            ViewBag.Seats = seats;
+
             return View("~/Views/TravelSite/EventBooking.cshtml", model);
         }
 
@@ -158,6 +171,38 @@ namespace TravelSiteModification.Controllers
 
             // Calculate total price for this booking
             decimal totalPrice = model.Price * model.TicketCount;
+
+            if (model.SelectedSeatIds != null && model.SelectedSeatIds.Count > 0)
+            {
+                try
+                {
+                    EventSeatReservationRequest request = new EventSeatReservationRequest();
+                    request.EventOfferingId = model.EventId;
+                    request.SeatIds = model.SelectedSeatIds;
+                    request.CustomerName = model.FirstName.Trim() + " " + model.LastName.Trim();
+                    request.CustomerEmail = model.Email.Trim();
+
+                    // Get values from configuration (appsettings.json)
+                    IConfiguration configuration =
+                        (IConfiguration)HttpContext.RequestServices.GetService(typeof(IConfiguration));
+
+                    request.TravelSiteId = Convert.ToInt32(configuration["EventsApi:TravelSiteID"]);
+                    request.Token = configuration["EventsApi:TravelSiteToken"];
+
+                    int apiReservationId = eventsApiClient.ReserveWithSeatsAsync(request).Result;
+
+                    if (apiReservationId <= 0)
+                    {
+                        // Optional: add a warning message, but do not block the regular booking
+                        ViewBag.ApiSeatWarning = "Seat reservation through Events API did not succeed.";
+                    }
+                }
+                catch (Exception apiEx)
+                {
+                    string msg = apiEx.Message;
+                    ViewBag.ApiSeatWarning = "Error contacting Events API for seat reservation.";
+                }
+            }
 
             SqlCommand insertCmd = new SqlCommand();
             insertCmd.CommandType = CommandType.StoredProcedure;
@@ -290,6 +335,5 @@ namespace TravelSiteModification.Controllers
             HttpContext.Session.SetInt32("CurrentPackageID", packageId);
             return packageId;
         }
-
     }
 }

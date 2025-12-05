@@ -69,5 +69,38 @@ namespace TravelSiteModification.Services
 
             return seats;
         }
+
+        public async Task<int> ReserveWithSeatsAsync(EventSeatReservationRequest request)
+        {
+            string url = "api/Event/ReserveWithSeats";
+
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+
+            string json = JsonSerializer.Serialize(request, options);
+
+            StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PostAsync(url, content);
+            string responseJson = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return 0;
+            }
+
+            using (JsonDocument doc = JsonDocument.Parse(responseJson))
+            {
+                JsonElement root = doc.RootElement;
+
+                JsonElement reservationElement;
+                if (root.TryGetProperty("reservationId", out reservationElement))
+                {
+                    return reservationElement.GetInt32();
+                }
+            }
+
+            return 0;
+        }
     }
 }

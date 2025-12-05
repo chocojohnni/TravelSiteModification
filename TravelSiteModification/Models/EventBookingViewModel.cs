@@ -10,7 +10,8 @@ namespace TravelSiteModification.Models
         private string lastName;
         private string email;
         private int ticketCount;
-        public List<int> SelectedSeatIds { get; set; } = new List<int>();
+        private List<int> selectedSeatIds = new List<int>();
+
 
         public int EventId
         {
@@ -57,6 +58,11 @@ namespace TravelSiteModification.Models
             set { ticketCount = value; }
         }
 
-
+        [Display(Name = "Selected Seats")]
+        public List<int> SelectedSeatIds
+        {
+            get { return selectedSeatIds; }
+            set { selectedSeatIds = value; }
+        }
     }
 }
