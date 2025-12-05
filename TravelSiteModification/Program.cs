@@ -9,6 +9,8 @@ builder.Services.AddSession();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddHttpClient<TicketmasterService>();
+
 builder.Services.AddHttpClient<EventsAPIClient>(client =>
 {
     var baseUrl = builder.Configuration["EventsApi:BaseUrl"];
