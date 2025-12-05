@@ -9,15 +9,14 @@
     </a>
 
     <div class="row">
+        <!-- LEFT COLUMN: Hotel Info -->
         <div class="col-md-4">
             <h2 class="fw-bold text-primary">@Model.HotelName</h2>
 
-            <!-- HOTEL IMAGE GALLERY -->
             @if (Model.GalleryImages != null && Model.GalleryImages.Count > 0)
             {
                 <div id="hotelGallery" class="carousel slide mb-3" data-bs-ride="carousel">
 
-                    <!-- Indicators -->
                     <div class="carousel-indicators">
                         @for (int i = 0; i < Model.GalleryImages.Count; i++)
                         {
@@ -29,7 +28,6 @@
                         }
                     </div>
 
-                    <!-- Slides -->
                     <div class="carousel-inner rounded shadow-sm">
                         @for (int i = 0; i < Model.GalleryImages.Count; i++)
                         {
@@ -41,7 +39,6 @@
                         }
                     </div>
 
-                    <!-- Controls -->
                     <button class="carousel-control-prev" type="button" data-bs-target="#hotelGallery" data-bs-slide="prev">
                         <span class="carousel-control-prev-icon"></span>
                     </button>
@@ -53,7 +50,6 @@
             }
             else if (!string.IsNullOrEmpty(Model.ImagePath))
             {
-                <!-- Fallback: Old Single Image -->
                 <img src="@Model.ImagePath" class="img-fluid rounded mb-3" />
             }
 
@@ -71,6 +67,7 @@
             {
                 <div class="mt-3">
                     <h6 class="fw-bold">Your Dates</h6>
+
                     @if (Model.CheckInDate.HasValue)
                     {
                         <p class="mb-0"><strong>Check-in:</strong> @Model.CheckInDate.Value.ToShortDateString()</p>
@@ -83,6 +80,9 @@
             }
         </div>
 
+
+
+        <!-- RIGHT COLUMN: Rooms -->
         <div class="col-md-8">
             <h3 class="border-bottom pb-2">Available Rooms</h3>
 
@@ -94,31 +94,53 @@
                             <th>Room Type</th>
                             <th class="text-center">Capacity</th>
                             <th class="text-end">Nightly Price</th>
-                            <th>Book</th>
+                            <th>Select</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         @foreach (var room in Model.Rooms)
                         {
                             <tr>
+                                <!-- Room Info -->
                                 <td>
                                     <div class="d-flex align-items-center">
                                         @if (!string.IsNullOrEmpty(room.ImagePath))
                                         {
-                                            <img src="@room.ImagePath" height="50" width="80"
+                                            <img src="@room.ImagePath"
+                                                 height="50" width="80"
                                                  class="me-2 rounded" />
                                         }
                                         <span class="fw-semibold">@room.RoomType</span>
                                     </div>
                                 </td>
+
                                 <td class="text-center">@room.Capacity</td>
                                 <td class="text-end">@room.Price.ToString("C")</td>
+
+                                <!-- THE FIXED SELECT BUTTON -->
                                 <td>
-                                    <a asp-controller="HotelBooking"
-                                       asp-action="Index"
-                                       asp-route-hotelId="@Model.HotelID"
-                                       asp-route-roomId="@room.RoomID"
-                                       class="btn btn-primary btn-sm">Select</a>
+                                    <!-- Button submits a form OUTSIDE the table -->
+                                    <button type="submit"
+                                            form="selectForm_@room.RoomID"
+                                            class="btn btn-primary btn-sm">
+                                        Select
+                                    </button>
+
+                                    <!-- FORM OUTSIDE TABLE -->
+                                    <form id="selectForm_@room.RoomID"
+                                          method="post"
+                                          action="/HotelBooking/SelectRoom">
+
+                                        <input type="hidden" name="hotelId" value="@Model.HotelID" />
+                                        <input type="hidden" name="roomId" value="@room.RoomID" />
+
+                                        <input type="hidden" name="checkInDate"
+                                               value="@Model.CheckInDate?.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="checkOutDate"
+                                               value="@Model.CheckOutDate?.ToString("yyyy-MM-dd")" />
+
+                                    </form>
                                 </td>
                             </tr>
                         }
