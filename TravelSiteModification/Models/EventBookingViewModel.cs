@@ -10,6 +10,7 @@ namespace TravelSiteModification.Models
         private string lastName;
         private string email;
         private int ticketCount;
+        public List<int> SelectedSeatIds { get; set; } = new List<int>();
 
         public int EventId
         {

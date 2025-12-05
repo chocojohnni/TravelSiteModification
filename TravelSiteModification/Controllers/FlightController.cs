@@ -26,7 +26,7 @@ namespace TravelSiteModification.Controllers
         }
 
         [HttpGet]
-        public IActionResult Book(int flightId)
+        public async Task<IActionResult> Book(int flightId)
         {
             int? userIdNullable = HttpContext.Session.GetInt32("UserID");
             int userIdValue = 0;
@@ -93,6 +93,9 @@ namespace TravelSiteModification.Controllers
                 model.Email = email;
             }
 
+            List<FlightImage> images = await flightsApi.GetFlightImagesAsync(flightId);
+            ViewBag.FlightImages = images;
+
             return View("~/Views/TravelSite/FlightBooking.cshtml", model);
         }
 
@@ -113,6 +116,9 @@ namespace TravelSiteModification.Controllers
 
                 return RedirectToAction("Login", "Account");
             }
+
+            List<FlightImage> images = await flightsApi.GetFlightImagesAsync(model.FlightId);
+            ViewBag.FlightImages = images;
 
             // Reload flight details
             SqlCommand reloadCmd = new SqlCommand();
@@ -267,61 +273,50 @@ namespace TravelSiteModification.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Find()
-        {
-            FlightSearchViewModel model = new FlightSearchViewModel();
-
-            // Optional defaults:
-            // model.DepCity = "New York";
-            // model.ArrCity = "Los Angeles";
-
-            model.Carriers = await flightsApi.GetAllCarriersAsync();
-
-            return View("Find", model);
-        }
-
-        [HttpPost]
         public async Task<IActionResult> Find(FlightSearchViewModel model)
         {
-            if (!ModelState.IsValid)
+            model.Carriers = await flightsApi.GetAllCarriersAsync();
+
+            bool hasRoute =
+                !string.IsNullOrWhiteSpace(model.DepCity) &&
+                !string.IsNullOrWhiteSpace(model.ArrCity);
+
+            if (!hasRoute)
             {
-                model.Carriers = await flightsApi.GetAllCarriersAsync();
                 return View("Find", model);
             }
 
-            FlightRequirements req = new FlightRequirements
-            {
-                AirlineID = model.AirlineID,
-                MaxPrice = model.MaxPrice,
-                NonStop = model.NonStop,
-                FirstClass = model.FirstClass
-            };
-
             try
             {
+                FlightRequirements requirements = new FlightRequirements
+                {
+                    AirlineID = model.AirlineID,
+                    MaxPrice = model.MaxPrice,
+                    NonStop = model.NonStop,
+                    FirstClass = model.FirstClass
+                };
+
+                // Call Flights Web API
                 List<Flight> flights = await flightsApi.FindFlightsAsync(
                     model.DepCity,
                     model.DepState,
                     model.ArrCity,
                     model.ArrState,
-                    req);
+                    requirements);
 
                 model.Flights = flights;
-                model.Carriers = await flightsApi.GetAllCarriersAsync();
 
-                if (flights.Count == 0)
+                if (flights == null || flights.Count == 0)
                 {
                     model.ErrorMessage = "No flights found for the given criteria.";
                 }
-
-                return View("Find", model);
             }
             catch (Exception ex)
             {
                 model.ErrorMessage = "Error calling Flights API: " + ex.Message;
-                model.Carriers = await flightsApi.GetAllCarriersAsync();
-                return View("Find", model);
             }
+
+            return View("Find", model);
         }
 
         private int GetOrCreateOpenVacationPackage(int userId, decimal additionalCost)

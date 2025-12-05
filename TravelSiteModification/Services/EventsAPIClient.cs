@@ -1,11 +1,8 @@
-﻿using System.Text.Json;
-using System;
-using System.Collections.Generic;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
+﻿using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using TravelSiteModification.Models;
 
 namespace TravelSiteModification.Services
@@ -46,6 +43,31 @@ namespace TravelSiteModification.Services
             }
 
             return events;
+        }
+
+        public async Task<List<EventSeat>> GetSeatsForEventAsync(int eventId)
+        {
+            string url = "api/Event/Seats?eventId=" + eventId.ToString();
+
+            HttpResponseMessage response = await client.GetAsync(url);
+            string content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new List<EventSeat>();
+            }
+
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.PropertyNameCaseInsensitive = true;
+
+            List<EventSeat> seats = JsonSerializer.Deserialize<List<EventSeat>>(content, options);
+
+            if (seats == null)
+            {
+                seats = new List<EventSeat>();
+            }
+
+            return seats;
         }
     }
 }
