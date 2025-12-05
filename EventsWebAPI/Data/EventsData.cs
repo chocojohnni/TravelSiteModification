@@ -162,7 +162,7 @@ namespace EventsWebAPI.Data
             return 0;
         }
 
-        public List<EventSeat> GetSeatsForEvent(int eventId)
+        public List<EventSeatDto> GetSeatsForEvent(int eventId)
         {
             SqlCommand cmd = new SqlCommand("dbo.TP_GetSeatsForEvent");
             cmd.CommandType = CommandType.StoredProcedure;
@@ -170,7 +170,7 @@ namespace EventsWebAPI.Data
 
             DataSet ds = db.GetDataSetUsingCmdObj(cmd);
 
-            List<EventSeat> seats = new List<EventSeat>();
+            List<EventSeatDto> seats = new List<EventSeatDto>();
 
             if (ds != null &&
                 ds.Tables.Count > 0 &&
@@ -178,7 +178,7 @@ namespace EventsWebAPI.Data
             {
                 foreach (DataRow row in ds.Tables[0].Rows)
                 {
-                    EventSeat seat = new EventSeat();
+                    EventSeatDto seat = new EventSeatDto();
 
                     seat.SeatId = Convert.ToInt32(row["SeatID"]);
                     seat.EventId = Convert.ToInt32(row["EventID"]);
