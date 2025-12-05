@@ -26,7 +26,7 @@ namespace TravelSiteModification.Controllers
         }
 
         [HttpGet]
-        public IActionResult Book(int flightId)
+        public async Task<IActionResult> Book(int flightId)
         {
             int? userIdNullable = HttpContext.Session.GetInt32("UserID");
             int userIdValue = 0;
@@ -93,6 +93,9 @@ namespace TravelSiteModification.Controllers
                 model.Email = email;
             }
 
+            List<FlightImage> images = await flightsApi.GetFlightImagesAsync(flightId);
+            ViewBag.FlightImages = images;
+
             return View("~/Views/TravelSite/FlightBooking.cshtml", model);
         }
 
@@ -113,6 +116,9 @@ namespace TravelSiteModification.Controllers
 
                 return RedirectToAction("Login", "Account");
             }
+
+            List<FlightImage> images = await flightsApi.GetFlightImagesAsync(model.FlightId);
+            ViewBag.FlightImages = images;
 
             // Reload flight details
             SqlCommand reloadCmd = new SqlCommand();
