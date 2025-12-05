@@ -170,7 +170,7 @@ namespace TravelSiteModification.Controllers
             insertCmd.Parameters.AddWithValue("@Email", model.Email.Trim());
             insertCmd.Parameters.AddWithValue("@BookingDate", DateTime.Now);
             insertCmd.Parameters.AddWithValue("@TotalPrice", totalPrice);
-            insertCmd.Parameters.AddWithValue("@Status", "Pending");
+            insertCmd.Parameters.AddWithValue("@Status", "Confirmed");
 
             try
             {
