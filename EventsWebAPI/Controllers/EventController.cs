@@ -235,7 +235,7 @@ namespace EventsWebAPI.Controllers
                     return BadRequest("eventId is required and must be positive.");
                 }
 
-                List<EventSeat> seats = eventsData.GetSeatsForEvent(eventId);
+                List<EventSeatDto> seats = eventsData.GetSeatsForEvent(eventId);
 
                 return Ok(seats);
             }
@@ -254,7 +254,7 @@ namespace EventsWebAPI.Controllers
         /// </remarks>
         [HttpPost("ReserveWithSeats")]
         [Produces("application/json")]
-        public IActionResult ReserveWithSeats([FromBody] ReserveWithSeats dto)
+        public IActionResult ReserveWithSeats([FromBody] ReserveWithSeatsDto dto)
         {
             try
             {

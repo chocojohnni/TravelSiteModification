@@ -1,4 +1,4 @@
-﻿namespace EventsWebAPI.Models
+﻿namespace TravelSiteModification.Models
 {
     public class EventSeat
     {
@@ -50,6 +50,11 @@
         {
             get { return isReserved; }
             set { isReserved = value; }
+        }
+
+        public string DisplayLabel
+        {
+            get { return RowLabel + "-" + SeatNumber.ToString(); }
         }
     }
 }

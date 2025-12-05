@@ -1,7 +1,9 @@
 ﻿@model TravelSiteModification.Models.EventBookingViewModel
+@using TravelSiteModification.Models
 
 @{
     ViewData["Title"] = "Book Event Tickets";
+    List<EventSeat> seats = ViewBag.Seats as List<EventSeat>;
 }
 
 <h2>Book Event Tickets</h2>
@@ -65,6 +67,44 @@
                 <input asp-for="TicketCount" class="form-control" />
                 <span asp-validation-for="TicketCount" class="text-danger"></span>
             </div>
+
+            @if (seats != null && seats.Count > 0)
+            {
+                <h3>Select Your Seat(s)</h3>
+
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Section</th>
+                            <th>Row</th>
+                            <th>Seat</th>
+                            <th>Price Adj.</th>
+                            <th>Availability</th>
+                            <th>Select</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var seat in seats)
+                        {
+                            <tr class="@(seat.IsReserved ? "text-muted" : "")">
+                                <td>@seat.Section</td>
+                                <td>@seat.RowLabel</td>
+                                <td>@seat.SeatNumber</td>
+                                <td>@seat.PriceAdjust.ToString("C")</td>
+                                <td>@(seat.IsReserved ? "Reserved" : "Available")</td>
+                                <td>
+                                    @if (!seat.IsReserved)
+                                    {
+                                        <input type="checkbox"
+                                               name="SelectedSeatIds"
+                                               value="@seat.SeatId" />
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
 
             <button type="submit" class="btn btn-primary mt-2">
                 Confirm &amp; Book Tickets
