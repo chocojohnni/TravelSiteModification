@@ -25,16 +25,17 @@ namespace TravelSiteModification.Controllers
             model.PickupDate = HttpContext.Session.GetString("CarPickupDate");
             model.DropoffDate = HttpContext.Session.GetString("CarDropoffDate");
 
-            if (string.IsNullOrEmpty(model.PickupLocation) || string.IsNullOrEmpty(model.DropoffLocation))
+            if (string.IsNullOrEmpty(model.PickupLocation))
             {
-                model.ErrorMessage = "No locations selected. Please return to the home page.";
+                model.ErrorMessage = "No pickup location selected.";
                 return View(model);
             }
 
-            model.Results = await LoadCarsFromApi(model.PickupLocation, model.DropoffLocation);
+            // Load cars using API
+            model.Results = await LoadCarsFromApi(model.PickupLocation);
 
             if (model.Results == null || model.Results.Count == 0)
-                model.ErrorMessage = "No rental cars were found matching your criteria.";
+                model.ErrorMessage = "No rental cars were found.";
 
             return View(model);
         }
@@ -67,38 +68,36 @@ namespace TravelSiteModification.Controllers
 
             return model;
         }
-        private async Task<List<CarResultViewModel>> LoadCarsFromApi(string pickup, string dropoff)
+
+        private async Task<List<CarResultViewModel>> LoadCarsFromApi(string pickupCode)
         {
-            CarAPIService api = new CarAPIService(new HttpClient());
+            string city = pickupCode;
+            
+            List<CarAPIModel> raw = await carApi.FindCarsAsync(city, "", 0, 10000);
 
-            string pickupCity = ConvertCodeToCityName(pickup);
-            string dropoffCity = ConvertCodeToCityName(dropoff);
+            List<CarResultViewModel> result = new List<CarResultViewModel>();
 
-            List<CarAPIModel> raw = await api.FindCarsAsync(pickupCity, dropoffCity, "", 0, 10000);
-
-            List<CarResultViewModel> list = new List<CarResultViewModel>();
-            int i = 0;
-            while (i < raw.Count)
+            foreach (var car in raw)
             {
-                list.Add(MapApiCarToResult(raw[i]));
-                i++;
+                result.Add(MapApiCarToResult(car));
             }
 
-            return list;
+            return result;
         }
 
         private string ConvertCodeToCityName(string code)
         {
-            switch (code)
+            return code switch
             {
-                case "NYC": return "New York";
-                case "LAX": return "Los Angeles";
-                case "MIA": return "Miami";
-                case "SEA": return "Seattle";
-                case "PHL": return "Philadelphia";
-                default: return code;
-            }
+                "NYC" => "New York",
+                "LAX" => "Los Angeles",
+                "MIA" => "Miami",
+                "SEA" => "Seattle",
+                "PHL" => "Philadelphia",
+                _ => code
+            };
         }
+
         private CarResultViewModel MapApiCarToResult(CarAPIModel apiCar)
         {
             return new CarResultViewModel
@@ -107,7 +106,7 @@ namespace TravelSiteModification.Controllers
                 AgencyID = apiCar.AgencyID,
                 CarModel = apiCar.CarModel,
                 CarType = apiCar.CarType,
-                PricePerDay = apiCar.DailyRate,
+                PricePerDay = apiCar.DailyRate, // mapping handled correctly
                 Available = apiCar.Available,
                 ImagePath = apiCar.ImagePath
             };
