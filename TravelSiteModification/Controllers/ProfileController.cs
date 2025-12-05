@@ -1,0 +1,56 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using System.Data;
+using System.Data.SqlClient;
+using TravelSiteModification.Models;
+using Utilities;
+
+namespace TravelSiteModification.Controllers
+{
+    public class ProfileController : Controller
+    {
+        public IActionResult Edit()
+        {
+            return View(new EditProfileViewModel());
+        }
+
+        [HttpPost]
+        public IActionResult Edit(EditProfileViewModel model)
+        {
+            int userID = HttpContext.Session.GetInt32("UserID") ?? -1;
+            if (userID == -1)
+            {
+                model.Message = "You must be logged in to edit your profile.";
+                return View(model);
+            }
+
+            DBConnect objDB = new DBConnect();
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "UpdateUserProfile";
+
+            cmd.Parameters.AddWithValue("@UserID", userID);
+            cmd.Parameters.AddWithValue("@NewEmail", model.Email);
+            cmd.Parameters.AddWithValue("@NewPW", model.Password ?? "");
+
+            cmd.Parameters.AddWithValue("@Address", model.Address);
+            cmd.Parameters.AddWithValue("@City", model.City);
+            cmd.Parameters.AddWithValue("@State", model.State);
+            cmd.Parameters.AddWithValue("@Zip", model.Zip);
+            cmd.Parameters.AddWithValue("@Phone", model.Phone);
+
+            cmd.Parameters.AddWithValue("@CardNumber", model.CardNumber);
+            cmd.Parameters.AddWithValue("@CardType", model.CardType);
+            cmd.Parameters.AddWithValue("@ExpDate", model.Expiry);
+            cmd.Parameters.AddWithValue("@CVV", model.CVV);
+            cmd.Parameters.AddWithValue("@CardHolderName", model.CardHolder);
+
+            objDB.GetDataSetUsingCmdObj(cmd);
+
+            model.Message = "Profile updated successfully!";
+
+            return View(model);
+        }
+    }
+}
