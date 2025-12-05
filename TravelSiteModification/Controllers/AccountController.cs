@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using System.Data;
 using System.Data.SqlClient;
 using TravelSiteModification.Models;
+using TravelSiteModification.Services;
 using Utilities;
 
 namespace TravelSiteModification.Controllers
@@ -152,7 +153,13 @@ namespace TravelSiteModification.Controllers
         [HttpPost]
         public IActionResult ForgotPassword(string email)
         {
-            // Check if user exists
+            if (string.IsNullOrEmpty(email))
+            {
+                ViewBag.Error = "Please enter your email.";
+                return View();
+            }
+
+            // check if the email exists
             SqlCommand checkCmd = new SqlCommand();
             checkCmd.CommandType = CommandType.StoredProcedure;
             checkCmd.CommandText = "CheckUserEmail";
@@ -166,7 +173,7 @@ namespace TravelSiteModification.Controllers
                 return View();
             }
 
-            // Load the user’s security questions
+            // 2) Load user's security questions 
             SqlCommand qsCmd = new SqlCommand();
             qsCmd.CommandType = CommandType.StoredProcedure;
             qsCmd.CommandText = "TP_GetUserSecurityQuestions";
@@ -176,7 +183,7 @@ namespace TravelSiteModification.Controllers
 
             if (qs.Tables.Count == 0 || qs.Tables[0].Rows.Count == 0)
             {
-                ViewBag.Error = "This account has no security questions.";
+                ViewBag.Error = "No security questions are set up for this account.";
                 return View();
             }
 
@@ -190,12 +197,42 @@ namespace TravelSiteModification.Controllers
             string correctAnswer = row["Answer"].ToString();
             int userID = Convert.ToInt32(row["UserID"]);
 
-            // Store in Session for later
             HttpContext.Session.SetInt32("Reset_UserID", userID);
             HttpContext.Session.SetString("Reset_Question", questionText);
             HttpContext.Session.SetString("Reset_Answer", correctAnswer);
 
-            return RedirectToAction("VerifySecurityQuestion");
+            string firstName = string.Empty;
+
+            SqlCommand userCmd = new SqlCommand();
+            userCmd.CommandType = CommandType.Text;
+            userCmd.CommandText = "SELECT FirstName FROM Users WHERE Email = @Email";
+            userCmd.Parameters.AddWithValue("@Email", email);
+
+            DataSet userDs = db.GetDataSetUsingCmdObj(userCmd);
+
+            if (userDs.Tables.Count > 0 && userDs.Tables[0].Rows.Count > 0)
+            {
+                firstName = Convert.ToString(userDs.Tables[0].Rows[0]["FirstName"]);
+            }
+
+            string resetLink = Url.Action(
+                "VerifySecurityQuestion",
+                "Account",
+                new { email = email },
+                Request.Scheme
+            );
+
+            try
+            {
+                EmailService.SendPasswordResetEmail(email, firstName, resetLink);
+
+                ViewBag.Message = "We've emailed you a link to continue resetting your password. Please check your inbox.";
+            }
+            catch (Exception)
+            {
+                ViewBag.Error = "We were unable to send the reset email at this time. Please try again later.";
+            }
+            return View();
         }
 
         [HttpGet]
