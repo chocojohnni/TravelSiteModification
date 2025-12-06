@@ -8,6 +8,7 @@ Home Pages:
 
   In this project, our third party API was the use of the Ticketmaster API. In our travel website, the user has the option of searching for events via Ticketmaster Affiliate Search, rather than the way the user can search for Flights, Hotels, and Cars. If the user decides to search for Ticketmaster events, the user will be able to search for Ticketmaster events in a specific city. A card gallery/menu will pop up displaying all upcoming Ticketmaster events, with the ability to go to Ticketmaster's website for specific events and book tickets via Ticketmaster's website, instead of booking an event through our Website. The user still has the ability to search and book events via our vacation package regardless, but Ticketmaster is an option via their API.
 - Views that use this API: TravelSiteModification/Views/Ticketmaster/Index.cshtml
+- Side note when it comes to Events and possibly Cars API: For both to work, you may need to right click on solution,, go to Configure Startup Projects, and run the main solution AND both APIs at the same time. You definitely will need to do this at least for the Events API, it must start up and run at the same time as the main web application
 
 **Learning Opportunities**
 
