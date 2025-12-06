@@ -2,33 +2,136 @@
 {
     public class CarBookingViewModel
     {
-        // Selected car details
-        public int SelectedCarID { get; set; }
+        private int selectedCarID;
+        private string carModel;
+        private string carType;
+        private string agencyName;
+        private string pickupLocation;
+        private string dropoffLocation;
 
-        public string CarModel { get; set; }
-        public string CarType { get; set; }
-        public string AgencyName { get; set; }
-        public string PickupLocation { get; set; }
-        public string DropoffLocation { get; set; }
+        private string pickupDate;
+        private string dropoffDate;
 
-        public string PickupDate { get; set; }
-        public string DropoffDate { get; set; }
+        private int totalDays;
+        private decimal totalCost;
 
-        public int TotalDays { get; set; }
-        public decimal TotalCost { get; set; }
+        private string firstName;
+        private string lastName;
+        private string email;
 
-        // Driver info
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Email { get; set; }
+        private string cardNumber;
+        private string expiryDate;
+        private string cvv;
 
-        // Payment (mock)
-        public string CardNumber { get; set; }
-        public string ExpiryDate { get; set; }
-        public string CVV { get; set; }
+        private string status;
+        private bool bookingConfirmed;
 
-        // Status
-        public string Status { get; set; }
-        public bool BookingConfirmed { get; set; }
+        public int SelectedCarID
+        {
+            get { return selectedCarID; }
+            set { selectedCarID = value; }
+        }
+
+        public string CarModel
+        {
+            get { return carModel; }
+            set { carModel = value; }
+        }
+
+        public string CarType
+        {
+            get { return carType; }
+            set { carType = value; }
+        }
+
+        public string AgencyName
+        {
+            get { return agencyName; }
+            set { agencyName = value; }
+        }
+
+        public string PickupLocation
+        {
+            get { return pickupLocation; }
+            set { pickupLocation = value; }
+        }
+
+        public string DropoffLocation
+        {
+            get { return dropoffLocation; }
+            set { dropoffLocation = value; }
+        }
+
+        public string PickupDate
+        {
+            get { return pickupDate; }
+            set { pickupDate = value; }
+        }
+
+        public string DropoffDate
+        {
+            get { return dropoffDate; }
+            set { dropoffDate = value; }
+        }
+
+        public int TotalDays
+        {
+            get { return totalDays; }
+            set { totalDays = value; }
+        }
+
+        public decimal TotalCost
+        {
+            get { return totalCost; }
+            set { totalCost = value; }
+        }
+
+        public string FirstName
+        {
+            get { return firstName; }
+            set { firstName = value; }
+        }
+
+        public string LastName
+        {
+            get { return lastName; }
+            set { lastName = value; }
+        }
+
+        public string Email
+        {
+            get { return email; }
+            set { email = value; }
+        }
+
+        public string CardNumber
+        {
+            get { return cardNumber; }
+            set { cardNumber = value; }
+        }
+
+        public string ExpiryDate
+        {
+            get { return expiryDate; }
+            set { expiryDate = value; }
+        }
+
+        public string CVV
+        {
+            get { return cvv; }
+            set { cvv = value; }
+        }
+
+        public string Status
+        {
+            get { return status; }
+            set { status = value; }
+        }
+
+        public bool BookingConfirmed
+        {
+            get { return bookingConfirmed; }
+            set { bookingConfirmed = value; }
+        }
     }
 }

@@ -2,24 +2,96 @@
 {
     public class Car
     {
-        public int CarID { get; set; }
+        private int carID;
 
-        public int AgencyID { get; set; }
-        public string AgencyName { get; set; }
+        private int agencyID;
+        private string agencyName;
 
-        public string CarModel { get; set; }
-        public int Year { get; set; }
+        private string carModel;
+        private int year;
 
-        public string PickupLocationCode { get; set; }
-        public string DropoffLocationCode { get; set; }
+        private string pickupLocationCode;
+        private string dropoffLocationCode;
 
-        public int Seats { get; set; }
-        public string Transmission { get; set; }
+        private int seats;
+        private string transmission;
 
-        public decimal PricePerDay { get; set; }
-        public decimal TotalPrice { get; set; }
+        private decimal pricePerDay;
+        private decimal totalPrice;
 
-        public string Description { get; set; }
+        private string description;
+
+        public int CarID
+        {
+            get { return carID; }
+            set { carID = value; }
+        }
+
+        public int AgencyID
+        {
+            get { return agencyID; }
+            set { agencyID = value; }
+        }
+
+        public string AgencyName
+        {
+            get { return agencyName; }
+            set { agencyName = value; }
+        }
+
+        public string CarModel
+        {
+            get { return carModel; }
+            set { carModel = value; }
+        }
+
+        public int Year
+        {
+            get { return year; }
+            set { year = value; }
+        }
+
+        public string PickupLocationCode
+        {
+            get { return pickupLocationCode; }
+            set { pickupLocationCode = value; }
+        }
+
+        public string DropoffLocationCode
+        {
+            get { return dropoffLocationCode; }
+            set { dropoffLocationCode = value; }
+        }
+
+        public int Seats
+        {
+            get { return seats; }
+            set { seats = value; }
+        }
+
+        public string Transmission
+        {
+            get { return transmission; }
+            set { transmission = value; }
+        }
+
+        public decimal PricePerDay
+        {
+            get { return pricePerDay; }
+            set { pricePerDay = value; }
+        }
+
+        public decimal TotalPrice
+        {
+            get { return totalPrice; }
+            set { totalPrice = value; }
+        }
+
+        public string Description
+        {
+            get { return description; }
+            set { description = value; }
+        }
     }
 
 
