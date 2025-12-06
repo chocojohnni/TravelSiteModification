@@ -215,12 +215,7 @@ namespace TravelSiteModification.Controllers
                 firstName = Convert.ToString(userDs.Tables[0].Rows[0]["FirstName"]);
             }
 
-            string resetLink = Url.Action(
-                "VerifySecurityQuestion",
-                "Account",
-                new { email = email },
-                Request.Scheme
-            );
+            string resetLink = Url.Action("VerifySecurityQuestion", "Account", new { email = email }, Request.Scheme);
 
             try
             {

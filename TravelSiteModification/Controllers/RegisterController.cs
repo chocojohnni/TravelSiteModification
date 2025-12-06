@@ -10,8 +10,6 @@ namespace TravelSiteModification.Controllers
     public class RegisterController : Controller
     {
         private readonly DBConnect db;
-
-        // Create new database connection
         public RegisterController()
         {
             db = new DBConnect();
@@ -30,7 +28,6 @@ namespace TravelSiteModification.Controllers
         {
             if (!ModelState.IsValid)
             {
-                // Must reload the dropdowns if we return the form
                 LoadSecurityQuestions(model);
                 return View(model);
             }
@@ -50,7 +47,6 @@ namespace TravelSiteModification.Controllers
                 return View(model);
             }
 
-            // Insert the user into the Users table
             SqlCommand add = new SqlCommand();
             add.CommandType = CommandType.StoredProcedure;
             add.CommandText = "AddUser";

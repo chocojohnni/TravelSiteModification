@@ -240,7 +240,6 @@ namespace TravelSiteModification.Controllers
             }
         }
 
-        // ======================== ROOM AVAILABILITY ========================
         private void LoadRoomAvailability(int hotelId, HotelDetailsViewModel model)
         {
             SqlCommand cmd = new SqlCommand();

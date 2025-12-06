@@ -94,7 +94,7 @@ namespace TravelSiteModification.Controllers
             HttpContext.Session.SetString("CheckInDate", checkInDate);
             HttpContext.Session.SetString("CheckOutDate", checkOutDate);
 
-            return RedirectToAction("Index"); // Goes to HotelBooking/Index
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -193,7 +193,7 @@ namespace TravelSiteModification.Controllers
 
             DBConnect db = new DBConnect();
 
-            // --- FIND EXISTING OPEN PACKAGE ---
+            // find existing opening package
             if (packageId == 0)
             {
                 SqlCommand findCmd = new SqlCommand
@@ -216,7 +216,7 @@ namespace TravelSiteModification.Controllers
                 }
             }
 
-            // --- CREATE NEW PACKAGE IF NONE FOUND ---
+            // make a new package if an existing one isnt found
             if (packageId == 0)
             {
                 SqlCommand insertCmd = new SqlCommand
@@ -244,7 +244,7 @@ namespace TravelSiteModification.Controllers
             }
             else
             {
-                // --- UPDATE EXISTING PACKAGE ---
+                // update existing package
                 SqlCommand updateCmd = new SqlCommand
                 {
                     CommandType = CommandType.Text,

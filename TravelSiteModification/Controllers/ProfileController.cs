@@ -17,11 +17,17 @@ namespace TravelSiteModification.Controllers
         [HttpPost]
         public IActionResult Edit(EditProfileViewModel model)
         {
-            int userID = HttpContext.Session.GetInt32("UserID") ?? -1;
-            if (userID == -1)
+            int? sessionUserId = HttpContext.Session.GetInt32("UserID");
+            int userID;
+
+            if (sessionUserId == null)
             {
                 model.Message = "You must be logged in to edit your profile.";
                 return View(model);
+            }
+            else
+            {
+                userID = (int)sessionUserId;
             }
 
             DBConnect objDB = new DBConnect();
@@ -31,8 +37,28 @@ namespace TravelSiteModification.Controllers
             cmd.CommandText = "UpdateUserProfile";
 
             cmd.Parameters.AddWithValue("@UserID", userID);
-            cmd.Parameters.AddWithValue("@NewEmail", model.Email);
-            cmd.Parameters.AddWithValue("@NewPW", model.Password ?? "");
+
+            string emailToStore;
+            if (model.Email == null)
+            {
+                emailToStore = "";
+            }
+            else
+            {
+                emailToStore = model.Email;
+            }
+            cmd.Parameters.AddWithValue("@NewEmail", emailToStore);
+
+            string passwordToStore;
+            if (model.Password == null)
+            {
+                passwordToStore = "";
+            }
+            else
+            {
+                passwordToStore = model.Password;
+            }
+            cmd.Parameters.AddWithValue("@NewPW", passwordToStore);
 
             cmd.Parameters.AddWithValue("@Address", model.Address);
             cmd.Parameters.AddWithValue("@City", model.City);

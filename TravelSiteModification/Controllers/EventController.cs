@@ -182,7 +182,6 @@ namespace TravelSiteModification.Controllers
                     request.CustomerName = model.FirstName.Trim() + " " + model.LastName.Trim();
                     request.CustomerEmail = model.Email.Trim();
 
-                    // Get values from configuration (appsettings.json)
                     IConfiguration configuration =
                         (IConfiguration)HttpContext.RequestServices.GetService(typeof(IConfiguration));
 
@@ -193,7 +192,6 @@ namespace TravelSiteModification.Controllers
 
                     if (apiReservationId <= 0)
                     {
-                        // Optional: add a warning message, but do not block the regular booking
                         ViewBag.ApiSeatWarning = "Seat reservation through Events API did not succeed.";
                     }
                 }
