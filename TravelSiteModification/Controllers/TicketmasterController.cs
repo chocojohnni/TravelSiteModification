@@ -18,7 +18,6 @@ namespace TravelSiteModification.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            // Empty search page
             return View(new TicketmasterSearchViewModel());
         }
 

@@ -194,7 +194,6 @@ namespace TravelSiteModification.Controllers
 
         // POST: /VacationPackage/Confirm
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Confirm(int packageId)
         {
             int? userIdNullable = HttpContext.Session.GetInt32("UserID");
@@ -289,7 +288,6 @@ namespace TravelSiteModification.Controllers
 
             db.DoUpdateUsingCmdObj(confirmCmd);
 
-            // 3) Clear the session so new bookings start a fresh package
             HttpContext.Session.Remove("CurrentPackageID");
 
             TempData["PackageConfirmationMessage"] = "Your vacation package has been confirmed!";

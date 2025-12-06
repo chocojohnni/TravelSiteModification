@@ -11,8 +11,6 @@ namespace TravelSiteModification.Controllers
         {
             return View();
         }
-
-        // LOGOUT
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();

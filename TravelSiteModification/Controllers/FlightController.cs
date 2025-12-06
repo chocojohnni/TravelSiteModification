@@ -120,7 +120,6 @@ namespace TravelSiteModification.Controllers
             List<FlightImage> images = await flightsApi.GetFlightImagesAsync(model.FlightId);
             ViewBag.FlightImages = images;
 
-            // Reload flight details
             SqlCommand reloadCmd = new SqlCommand();
             reloadCmd.CommandType = CommandType.StoredProcedure;
             reloadCmd.CommandText = "GetFlightByID";
@@ -128,7 +127,7 @@ namespace TravelSiteModification.Controllers
 
             DataSet reloadDataSet = db.GetDataSetUsingCmdObj(reloadCmd);
 
-            int airlineId = 0; // we'll try to load this from the DB row
+            int airlineId = 0;
 
             if (reloadDataSet != null &&
                 reloadDataSet.Tables.Count > 0 &&
@@ -148,7 +147,6 @@ namespace TravelSiteModification.Controllers
                     model.Price = priceFromDatabase;
                 }
 
-                // ?? Try to read AirlineID if your GetFlightByID stored proc returns it
                 if (row.Table.Columns.Contains("AirlineID"))
                 {
                     airlineId = Convert.ToInt32(row["AirlineID"]);
@@ -160,7 +158,6 @@ namespace TravelSiteModification.Controllers
                 return View("~/Views/TravelSite/FlightBooking.cshtml", model);
             }
 
-            // Saving the flight booking (LOCAL DB)
             SqlCommand insertCmd = new SqlCommand();
             insertCmd.CommandType = CommandType.StoredProcedure;
             insertCmd.CommandText = "AddFlightBooking";
@@ -206,7 +203,6 @@ namespace TravelSiteModification.Controllers
                     // /reserve on the Flights API
                     try
                     {
-                        // Use real TravelSiteID and TravelSiteAPIToken
                         int travelSiteId = Convert.ToInt32(appConfiguration["FlightsApi:TravelSiteID"]);
                         string travelSiteToken = appConfiguration["FlightsApi:TravelSiteToken"];
 
