@@ -4,26 +4,92 @@ namespace TravelSiteModification.Models
 {
     public class CarDetailViewModel
     {
-        public int CarID { get; set; }
-        public int AgencyID { get; set; }
+        private int carID;
+        private int agencyID;
 
-        public string CarModel { get; set; }
-        public string CarType { get; set; }
-        public decimal PricePerDay { get; set; }
+        private string carModel;
+        private string carType;
+        private decimal pricePerDay;
 
-        public string ImagePath { get; set; }
+        private string imagePath;
 
-        public string AgencyName { get; set; }
-        public string AgencyPhone { get; set; }
-        public string AgencyEmail { get; set; }
+        private string agencyName;
+        private string agencyPhone;
+        private string agencyEmail;
 
-        public List<CarResultViewModel> OtherAgencyCars { get; set; }
-        public List<string> GalleryImages { get; set; }
+        private List<CarResultViewModel> otherAgencyCars;
+        private List<string> galleryImages;
+
+        public int CarID
+        {
+            get { return carID; }
+            set { carID = value; }
+        }
+
+        public int AgencyID
+        {
+            get { return agencyID; }
+            set { agencyID = value; }
+        }
+
+        public string CarModel
+        {
+            get { return carModel; }
+            set { carModel = value; }
+        }
+
+        public string CarType
+        {
+            get { return carType; }
+            set { carType = value; }
+        }
+
+        public decimal PricePerDay
+        {
+            get { return pricePerDay; }
+            set { pricePerDay = value; }
+        }
+
+        public string ImagePath
+        {
+            get { return imagePath; }
+            set { imagePath = value; }
+        }
+
+        public string AgencyName
+        {
+            get { return agencyName; }
+            set { agencyName = value; }
+        }
+
+        public string AgencyPhone
+        {
+            get { return agencyPhone; }
+            set { agencyPhone = value; }
+        }
+
+        public string AgencyEmail
+        {
+            get { return agencyEmail; }
+            set { agencyEmail = value; }
+        }
+
+        public List<CarResultViewModel> OtherAgencyCars
+        {
+            get { return otherAgencyCars; }
+            set { otherAgencyCars = value; }
+        }
+
+        public List<string> GalleryImages
+        {
+            get { return galleryImages; }
+            set { galleryImages = value; }
+        }
 
         public CarDetailViewModel()
         {
-            OtherAgencyCars = new List<CarResultViewModel>();
-            GalleryImages = new List<string>();
+            otherAgencyCars = new List<CarResultViewModel>();
+            galleryImages = new List<string>();
         }
     }
 }

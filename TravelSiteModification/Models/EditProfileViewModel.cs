@@ -3,23 +3,104 @@
     public class EditProfileViewModel
     {
         // Credentials
-        public string Email { get; set; }
-        public string Password { get; set; }
+        private string email;
+        private string password;
 
         // Contact
-        public string Address { get; set; }
-        public string City { get; set; }
-        public string State { get; set; }
-        public string Zip { get; set; }
-        public string Phone { get; set; }
+        private string address;
+        private string city;
+        private string state;
+        private string zip;
+        private string phone;
 
         // Payment
-        public string CardType { get; set; }
-        public string CardNumber { get; set; }
-        public string Expiry { get; set; }
-        public string CVV { get; set; }
-        public string CardHolder { get; set; }
+        private string cardType;
+        private string cardNumber;
+        private string expiry;
+        private string cvv;
+        private string cardHolder;
 
-        public string Message { get; set; }
+        private string message;
+
+        // Credentials
+        public string Email
+        {
+            get { return email; }
+            set { email = value; }
+        }
+
+        public string Password
+        {
+            get { return password; }
+            set { password = value; }
+        }
+
+        // Contact
+        public string Address
+        {
+            get { return address; }
+            set { address = value; }
+        }
+
+        public string City
+        {
+            get { return city; }
+            set { city = value; }
+        }
+
+        public string State
+        {
+            get { return state; }
+            set { state = value; }
+        }
+
+        public string Zip
+        {
+            get { return zip; }
+            set { zip = value; }
+        }
+
+        public string Phone
+        {
+            get { return phone; }
+            set { phone = value; }
+        }
+
+        // Payment
+        public string CardType
+        {
+            get { return cardType; }
+            set { cardType = value; }
+        }
+
+        public string CardNumber
+        {
+            get { return cardNumber; }
+            set { cardNumber = value; }
+        }
+
+        public string Expiry
+        {
+            get { return expiry; }
+            set { expiry = value; }
+        }
+
+        public string CVV
+        {
+            get { return cvv; }
+            set { cvv = value; }
+        }
+
+        public string CardHolder
+        {
+            get { return cardHolder; }
+            set { cardHolder = value; }
+        }
+
+        public string Message
+        {
+            get { return message; }
+            set { message = value; }
+        }
     }
 }
