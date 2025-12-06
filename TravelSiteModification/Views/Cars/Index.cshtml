@@ -1,91 +1,84 @@
 ﻿@model TravelSiteModification.Models.CarSearchViewModel
-@using Microsoft.AspNetCore.Http
 
 @{
-    ViewData["Title"] = "Car Rental Search Results";
-    var userFirstName = Context.Session.GetString("UserFirstName");
+    ViewData["Title"] = "Car Search";
 }
 
 <div class="container py-5">
-    <h1 class="mb-4">Car Rental Search Results</h1>
 
-    <!-- Refine Search -->
-    <form asp-action="Index" method="post">
-        <div class="p-3 mb-4 border rounded-3 bg-light">
-            <h5 class="fw-bold mb-3">Refine Your Search</h5>
+    <h1 class="mb-4">Car Rental Search</h1>
 
-            <div class="row g-3 mb-3">
-                <div class="col-md-3">
-                    <label asp-for="PickupLocation" class="form-label mb-0">Pickup Location</label>
-                    <select asp-for="PickupLocation" asp-items="Model.Locations" class="form-select"></select>
-                </div>
+    <form method="post" asp-action="Index" class="p-4 border rounded bg-light mb-4">
 
-                <div class="col-md-3">
-                    <label asp-for="DropoffLocation" class="form-label mb-0">Dropoff Location</label>
-                    <select asp-for="DropoffLocation" asp-items="Model.Locations" class="form-select"></select>
-                </div>
-
-                <div class="col-md-3">
-                    <label asp-for="PickupDate" class="form-label mb-0">Pickup Date</label>
-                    <input asp-for="PickupDate" type="date" class="form-control" />
-                </div>
-
-                <div class="col-md-3">
-                    <label asp-for="DropoffDate" class="form-label mb-0">Dropoff Date</label>
-                    <input asp-for="DropoffDate" type="date" class="form-control" />
-                </div>
+        <div class="row g-3">
+            <!-- Pickup -->
+            <div class="col-md-3">
+                <label class="form-label">Pickup Location</label>
+                <select asp-for="PickupLocation" asp-items="Model.Locations" class="form-select"></select>
             </div>
 
-            <div class="text-end">
-                <button type="submit" class="btn btn-warning">Update Search</button>
+            <!-- Dropoff -->
+            <div class="col-md-3">
+                <label class="form-label">Dropoff Location</label>
+                <select asp-for="DropoffLocation" asp-items="Model.Locations" class="form-select"></select>
             </div>
 
-            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-            {
-                <p class="text-danger mt-2">@Model.ErrorMessage</p>
-            }
+            <!-- Pickup Date -->
+            <div class="col-md-3">
+                <label class="form-label">Pickup Date</label>
+                <input asp-for="PickupDate" type="date" class="form-control" />
+            </div>
+
+            <!-- Dropoff Date -->
+            <div class="col-md-3">
+                <label class="form-label">Dropoff Date</label>
+                <input asp-for="DropoffDate" type="date" class="form-control" />
+            </div>
         </div>
+
+        <div class="text-end mt-3">
+            <button class="btn btn-primary px-4">Search Cars</button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger mt-3">
+                @Model.ErrorMessage
+            </div>
+        }
     </form>
 
-    <!-- Search criteria message -->
-    @if (!string.IsNullOrEmpty(Model.SearchCriteriaMessage))
-    {
-        <div class="mb-3">
-            @Html.Raw(Model.SearchCriteriaMessage)
-        </div>
-    }
-
-    <hr />
-
-    <!-- Results Table -->
     @if (Model.Results != null && Model.Results.Count > 0)
     {
-        <table class="table table-bordered table-striped mt-4">
+        <h3 class="mt-4">Available Cars</h3>
+
+        <table class="table table-bordered table-striped mt-3">
             <thead class="table-dark">
                 <tr>
-                    <th style="width:120px;">Car</th>
+                    <th>Car</th>
                     <th>Model</th>
                     <th>Type</th>
-                    <th class="text-end">Price/Day</th>
+                    <th>Price / Day</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th></th>
                 </tr>
             </thead>
+
             <tbody>
-                @foreach (var car in Model.Results)
+                @foreach (var c in Model.Results)
                 {
                     <tr>
-                        <td class="text-center">
-                            @if (!string.IsNullOrEmpty(car.ImagePath))
-                            {
-                                <img src="@car.ImagePath" alt="@car.CarModel" class="img-thumbnail" style="width:100px;" />
-                            }
+                        <td class="text-center" style="width: 120px;">
+                            <img src="@c.ImagePath" class="img-fluid rounded" style="max-height: 80px;" />
                         </td>
-                        <td>@car.CarModel</td>
-                        <td>@car.CarType</td>
-                        <td class="text-end">@car.PricePerDay.ToString("C")</td>
+
+                        <td>@c.CarModel</td>
+                        <td>@c.CarType</td>
+
+                        <td class="text-end">@c.PricePerDay.ToString("C")</td>
+
                         <td>
-                            @if (car.Available)
+                            @if (c.Available)
                             {
                                 <span class="text-success fw-bold">Available</span>
                             }
@@ -94,12 +87,14 @@
                                 <span class="text-danger">Reserved</span>
                             }
                         </td>
+
                         <td>
-                            @if (car.Available)
+                            @if (c.Available)
                             {
-                                <a asp-action="Details"
-                                   asp-route-carId="@car.CarID"
-                                   asp-route-agencyId="@car.AgencyID"
+                                <a asp-controller="Cars"
+                                   asp-action="Details"
+                                   asp-route-carId="@c.CarID"
+                                   asp-route-agencyId="@c.AgencyID"
                                    class="btn btn-primary btn-sm">
                                     View Details
                                 </a>
@@ -116,10 +111,10 @@
     }
     else
     {
-        <p class="alert alert-info mt-3">
-            @(!string.IsNullOrEmpty(Model.ErrorMessage)
-                    ? Model.ErrorMessage
-                    : "No rental cars were found matching your criteria.")
-    </p>
+        if (!string.IsNullOrEmpty(Model.PickupLocation))
+        {
+            <p class="text-muted fs-5 mt-4">No cars found for your search.</p>
         }
+    }
+
 </div>
