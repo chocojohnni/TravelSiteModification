@@ -5,10 +5,12 @@ Home Pages:
 - Johnny Tan:
 
 **Third Party API**
+
   In this project, our third party API was the use of the Ticketmaster API. In our travel website, the user has the option of searching for events via Ticketmaster Affiliate Search, rather than the way the user can search for Flights, Hotels, and Cars. If the user decides to search for Ticketmaster events, the user will be able to search for Ticketmaster events in a specific city. A card gallery/menu will pop up displaying all upcoming Ticketmaster events, with the ability to go to Ticketmaster's website for specific events and book tickets via Ticketmaster's website, instead of booking an event through our Website. The user still has the ability to search and book events via our vacation package regardless, but Ticketmaster is an option via their API.
 - Views that use this API:
 
 **Learning Opportunities**
+
 Johnny:
 - Views that used this learning opportunity:
 
@@ -16,9 +18,11 @@ Jans: This learning opportunity will include the implementation of a pie chart t
 - View that used this learning opportunity: TravelSiteModification/Views/Trips/Index.cshtml
 
 **Security**
+
   We have included security in two parts of this application. First, when the user registers a new account, they must answer 3 security questions, and their answers will be saved in the application. When the user wants to reset their password, they will not only have to answer a randomly selected security question they provided an answer to upon registration, but the web site will send a verification email to them with a button they will have to click in order to successfully reset their password.
 
 **Database**
+
 Name of Database: FA25_3342_tul38243
 List of Table names used with this project:
 [dbo].[Agencies]
