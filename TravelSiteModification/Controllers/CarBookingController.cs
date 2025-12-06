@@ -1,24 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using System;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using TravelSiteModification.Models;
-using TravelSiteModification.Services;
+using Utilities;
 
 namespace TravelSiteModification.Controllers
 {
     public class CarBookingController : Controller
     {
-        private readonly CarAPIService api;
-
-        public CarBookingController(CarAPIService apiService)
-        {
-            api = apiService;
-        }
+        private readonly DBConnect db = new DBConnect();
 
         // GET /CarBooking
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
             // Require login
             if (HttpContext.Session.GetString("UserFirstName") == null)
@@ -27,51 +22,29 @@ namespace TravelSiteModification.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // Require car selection
-            int? carId = HttpContext.Session.GetInt32("SelectedCarID");
-            string pickup = HttpContext.Session.GetString("CarPickupDate");
-            string dropoff = HttpContext.Session.GetString("CarDropoffDate");
-
-            if (carId == null || pickup == null || dropoff == null)
-            {
+            // Require selected car + dates
+            if (!SessionIsValid())
                 return RedirectToAction("Index", "Cars");
-            }
 
-            DateTime pickupDate = Convert.ToDateTime(pickup);
-            DateTime dropoffDate = Convert.ToDateTime(dropoff);
-
-            int totalDays = (int)(dropoffDate - pickupDate).TotalDays;
-            if (totalDays <= 0) totalDays = 1;
-
-            CarBookingViewModel model =
-                await BuildCarBookingModel(carId.Value, pickupDate, dropoffDate, totalDays);
-
+            // Build model just like WebForms Page_Load → BindCarDetails
+            CarBookingViewModel model = LoadBookingDetails();
             return View(model);
         }
 
         // POST /CarBooking
         [HttpPost]
-        public async Task<IActionResult> Index(CarBookingViewModel model)
+        public IActionResult Index(CarBookingViewModel model)
         {
-            int? carId = HttpContext.Session.GetInt32("SelectedCarID");
-            string pickup = HttpContext.Session.GetString("CarPickupDate");
-            string dropoff = HttpContext.Session.GetString("CarDropoffDate");
-
-            if (carId == null || pickup == null || dropoff == null)
+            if (!SessionIsValid())
             {
-                model.StatusMessage = "<p class='alert alert-danger'>Session data missing.</p>";
+                model.Status = "<p class='alert alert-danger'>Session data missing.</p>";
                 return View(model);
             }
 
-            DateTime pickupDate = Convert.ToDateTime(pickup);
-            DateTime dropoffDate = Convert.ToDateTime(dropoff);
-            int days = (int)(dropoffDate - pickupDate).TotalDays;
-            if (days <= 0) days = 1;
+            // Reload DB fields so users can't tamper with prices
+            CarBookingViewModel rebuilt = LoadBookingDetails();
 
-            CarBookingViewModel rebuilt =
-                await BuildCarBookingModel(carId.Value, pickupDate, dropoffDate, days);
-
-            // Copy posted fields
+            // Copy form fields into authoritative rebuilt model
             rebuilt.FirstName = model.FirstName;
             rebuilt.LastName = model.LastName;
             rebuilt.Email = model.Email;
@@ -79,125 +52,144 @@ namespace TravelSiteModification.Controllers
             rebuilt.ExpiryDate = model.ExpiryDate;
             rebuilt.CVV = model.CVV;
 
-            // Validation
+            // Validate fields
             if (string.IsNullOrWhiteSpace(rebuilt.FirstName) ||
                 string.IsNullOrWhiteSpace(rebuilt.Email))
             {
-                rebuilt.StatusMessage =
-                    "<p class='text-danger'>Please enter First Name and Email.</p>";
+                rebuilt.Status = "<p class='text-danger'>Please enter First Name and Email.</p>";
                 return View(rebuilt);
             }
 
-            decimal finalPrice =
-                HttpContext.Session.GetString("CarFinalPrice") != null
-                ? Convert.ToDecimal(HttpContext.Session.GetString("CarFinalPrice"))
-                : rebuilt.TotalCost;
-
-            string result = await SubmitReservationToApi(carId.Value, pickupDate, dropoffDate, finalPrice, rebuilt);
+            // Save in DB
+            string result = InsertCarBooking(rebuilt);
 
             if (result == "Success")
             {
                 rebuilt.BookingConfirmed = true;
-                rebuilt.StatusMessage =
-                    "<p class='alert alert-success'><strong>Booking Confirmed!</strong></p>";
+                rebuilt.Status =
+                    "<p class='alert alert-success'>🎉 <strong>Booking Confirmed!</strong></p>";
 
-                // Remove cart data
+                // Clear cart session
                 HttpContext.Session.Remove("SelectedCarID");
                 HttpContext.Session.Remove("CarFinalPrice");
             }
             else
             {
                 rebuilt.BookingConfirmed = false;
-                rebuilt.StatusMessage = result;
+                rebuilt.Status = result;
             }
 
             return View(rebuilt);
         }
 
-        // -------------------------------------------------------------------
-        // BUILD BOOKING MODEL (API version)
-        // -------------------------------------------------------------------
-        private async Task<CarBookingViewModel> BuildCarBookingModel(
-            int carId, DateTime pickup, DateTime dropoff, int days)
+        // ------------------------- HELPERS -------------------------------
+
+        private bool SessionIsValid()
         {
+            return HttpContext.Session.GetInt32("SelectedCarID") != null &&
+                   HttpContext.Session.GetString("CarPickupDate") != null &&
+                   HttpContext.Session.GetString("CarDropoffDate") != null;
+        }
+
+        private CarBookingViewModel LoadBookingDetails()
+        {
+            int carId = HttpContext.Session.GetInt32("SelectedCarID") ?? 0;
+            DateTime pickup = Convert.ToDateTime(HttpContext.Session.GetString("CarPickupDate"));
+            DateTime dropoff = Convert.ToDateTime(HttpContext.Session.GetString("CarDropoffDate"));
+
+            int totalDays = (int)(dropoff - pickup).TotalDays;
+            if (totalDays <= 0) totalDays = 1;
+
             CarBookingViewModel model = new CarBookingViewModel();
 
-            // Step 1: Get all cars in city
-            string sessionCityCode = HttpContext.Session.GetString("CarPickupLocation");
-            string cityCode = sessionCityCode;
-            List<CarAPIModel> cars = await api.FindCarsAsync(cityCode, "", 0, 2000);
+            // DB Lookup
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "GetCarAndAgencyDetails";
+            cmd.Parameters.AddWithValue("@CarID", carId);
 
-            CarAPIModel selected = cars.Find(c => c.CarID == carId);
+            DataTable dt = db.GetDataSetUsingCmdObj(cmd).Tables[0];
 
-            if (selected == null)
+            if (dt.Rows.Count > 0)
             {
-                model.StatusMessage = "<p class='alert alert-danger'>Car not found.</p>";
-                return model;
+                DataRow row = dt.Rows[0];
+
+                model.CarModel = row["CarModel"].ToString();
+                model.CarType = row["CarType"].ToString();
+                model.AgencyName = row["AgencyName"].ToString();
+                model.PickupLocation = row["PickupLocationCode"].ToString();
+                model.DropoffLocation = row["DropoffLocationCode"].ToString();
+
+                decimal pricePerDay = Convert.ToDecimal(row["PricePerDay"]);
+                decimal cost = pricePerDay * totalDays;
+
+                HttpContext.Session.SetString("CarFinalPrice", cost.ToString());
+
+                model.TotalCost = cost;
+                model.TotalDays = totalDays;
+                model.PickupDate = pickup.ToShortDateString();
+                model.DropoffDate = dropoff.ToShortDateString();
             }
-
-            decimal pricePerDay = selected.DailyRate;
-            decimal total = pricePerDay * days;
-
-            HttpContext.Session.SetString("CarFinalPrice", total.ToString());
-
-            model.SelectedCarID = carId;
-            model.CarModel = selected.CarModel;
-            model.CarType = selected.CarType;
-            model.AgencyName = "";
-            model.PickupLocation = selected.PickupLocationCode;
-            model.DropoffLocation = selected.DropoffLocationCode;
-            model.PickupDateDisplay = pickup.ToShortDateString();
-            model.DropoffDateDisplay = dropoff.ToShortDateString();
-            model.TotalDays = days;
-            model.TotalCost = total;
 
             return model;
         }
 
-
-        // -------------------------------------------------------------------
-        // API Reservation Submission
-        // -------------------------------------------------------------------
-        private async Task<string> SubmitReservationToApi(
-            int carId, DateTime pickup, DateTime dropoff, decimal finalPrice, CarBookingViewModel model)
+        private string InsertCarBooking(CarBookingViewModel model)
         {
-            int? userId = HttpContext.Session.GetInt32("UserID");
+            int userID = HttpContext.Session.GetInt32("UserID") ?? 0;
+            if (userID <= 0)
+                return "<p class='alert alert-danger'>❌ UserID missing.</p>";
 
-            if (userId == null || userId <= 0)
+            int carId = HttpContext.Session.GetInt32("SelectedCarID") ?? 0;
+            DateTime pickup = Convert.ToDateTime(HttpContext.Session.GetString("CarPickupDate"));
+            DateTime dropoff = Convert.ToDateTime(HttpContext.Session.GetString("CarDropoffDate"));
+            decimal finalPrice = Convert.ToDecimal(HttpContext.Session.GetString("CarFinalPrice"));
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "AddCarBooking";
+
+            cmd.Parameters.AddWithValue("@UserID", userID);
+            cmd.Parameters.AddWithValue("@CarID", carId);
+            cmd.Parameters.AddWithValue("@PickupDate", pickup);
+            cmd.Parameters.AddWithValue("@DropoffDate", dropoff);
+            cmd.Parameters.AddWithValue("@TotalAmount", finalPrice);
+            cmd.Parameters.AddWithValue("@FirstName", model.FirstName);
+            cmd.Parameters.AddWithValue("@LastName", model.LastName ?? "");
+            cmd.Parameters.AddWithValue("@Email", model.Email);
+
+            try
             {
-                return "<p class='alert alert-danger'>❌ User ID missing.</p>";
+                int rows = db.DoUpdateUsingCmdObj(cmd);
+
+                if (rows > 0)
+                {
+                    // update availability
+                    SqlCommand updateCar = new SqlCommand();
+                    updateCar.CommandType = CommandType.StoredProcedure;
+                    updateCar.CommandText = "UpdateCarAvailability";
+                    updateCar.Parameters.AddWithValue("@CarID", carId);
+                    db.DoUpdateUsingCmdObj(updateCar);
+
+                    return "Success";
+                }
+                else
+                {
+                    return "<p class='alert alert-danger'>❌ No rows added.</p>";
+                }
             }
-
-            ReservationRequest req = new ReservationRequest();
-            req.UserID = userId.Value;
-            req.CarID = carId;
-            req.PickupDate = pickup;
-            req.DropoffDate = dropoff;
-            req.TotalAmount = finalPrice;
-            req.FirstName = model.FirstName;
-            req.LastName = model.LastName ?? "";
-            req.Email = model.Email;
-            req.TravelSiteID = 1;
-            req.TravelSiteAPIToken = "TEST-TOKEN-123";
-
-            var response = await api.ReserveCarAsync(req);
-
-            if (response.Success)
-                return "Success";
-
-            return "<p class='alert alert-danger'>" + response.Message + "</p>";
+            catch (Exception ex)
+            {
+                return $"<p class='alert alert-danger'>❌ Error: {ex.Message}</p>";
+            }
         }
 
-        // -------------------------------------------------------------------
-        // Helper: Convert airport→city
-        // -------------------------------------------------------------------
-        private string ConvertToApiCity(string code)
+        // Called when user clicks “Book This Car”
+        [HttpPost]
+        public IActionResult StartBooking(int carId)
         {
-            if (code == "NYC") return "New York";
-            if (code == "LAX") return "Los Angeles";
-            if (code == "MIA") return "Miami";
-            if (code == "SEA") return "Seattle";
-            return code;
+            HttpContext.Session.SetInt32("SelectedCarID", carId);
+            return RedirectToAction("Index");
         }
     }
 }
