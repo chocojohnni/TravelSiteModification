@@ -2,14 +2,56 @@
 {
     public class FlightBookingItem
     {
-        public string AirlineName { get; set; }
-        public string DepartureCity { get; set; }
-        public string ArrivalCity { get; set; }
+        private string airlineName;
+        private string departureCity;
+        private string arrivalCity;
 
-        public string DepartureTime { get; set; }
-        public string ArrivalTime { get; set; }
+        private string departureTime;
+        private string arrivalTime;
 
-        public string Status { get; set; }
-        public string TotalPrice { get; set; }
+        private string status;
+        private string totalPrice;
+
+        public string AirlineName
+        {
+            get { return airlineName; }
+            set { airlineName = value; }
+        }
+
+        public string DepartureCity
+        {
+            get { return departureCity; }
+            set { departureCity = value; }
+        }
+
+        public string ArrivalCity
+        {
+            get { return arrivalCity; }
+            set { arrivalCity = value; }
+        }
+
+        public string DepartureTime
+        {
+            get { return departureTime; }
+            set { departureTime = value; }
+        }
+
+        public string ArrivalTime
+        {
+            get { return arrivalTime; }
+            set { arrivalTime = value; }
+        }
+
+        public string Status
+        {
+            get { return status; }
+            set { status = value; }
+        }
+
+        public string TotalPrice
+        {
+            get { return totalPrice; }
+            set { totalPrice = value; }
+        }
     }
 }
