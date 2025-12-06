@@ -9,6 +9,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 
 builder.Services.AddHttpClient<TicketmasterService>();
 
