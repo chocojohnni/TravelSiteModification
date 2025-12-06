@@ -1,27 +1,29 @@
-﻿using TravelSiteModification.Models;
+﻿using System.Collections.Generic;
 
-public class CarDetailViewModel
+namespace TravelSiteModification.Models
 {
-    public int CarID { get; set; }
-    public int AgencyID { get; set; }
-
-    public string CarModel { get; set; }
-    public string CarType { get; set; }
-    public decimal PricePerDay { get; set; }
-
-    public string ImagePath { get; set; }
-
-    public string AgencyName { get; set; }
-    public string AgencyPhone { get; set; }
-    public string AgencyEmail { get; set; }
-
-    public List<CarResultViewModel> OtherAgencyCars { get; set; }
-
-    public List<string> GalleryImages { get; set; }
-
-    public CarDetailViewModel()
+    public class CarDetailViewModel
     {
-        OtherAgencyCars = new List<CarResultViewModel>();
-        GalleryImages = new List<string>();
+        public int CarID { get; set; }
+        public int AgencyID { get; set; }
+
+        public string CarModel { get; set; }
+        public string CarType { get; set; }
+        public decimal PricePerDay { get; set; }
+
+        public string ImagePath { get; set; }
+
+        public string AgencyName { get; set; }
+        public string AgencyPhone { get; set; }
+        public string AgencyEmail { get; set; }
+
+        public List<CarResultViewModel> OtherAgencyCars { get; set; }
+        public List<string> GalleryImages { get; set; }
+
+        public CarDetailViewModel()
+        {
+            OtherAgencyCars = new List<CarResultViewModel>();
+            GalleryImages = new List<string>();
+        }
     }
 }
