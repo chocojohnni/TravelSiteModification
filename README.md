@@ -24,6 +24,7 @@ Jans: This learning opportunity will include the implementation of a pie chart t
 **Database**
 
 Name of Database: FA25_3342_tul38243
+
 List of Table names used with this project:
 
 [dbo].[Agencies]
