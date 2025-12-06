@@ -11,8 +11,8 @@
         public string PickupLocation { get; set; }
         public string DropoffLocation { get; set; }
 
-        public string PickupDateDisplay { get; set; }
-        public string DropoffDateDisplay { get; set; }
+        public string PickupDate { get; set; }
+        public string DropoffDate { get; set; }
 
         public int TotalDays { get; set; }
         public decimal TotalCost { get; set; }
@@ -28,7 +28,7 @@
         public string CVV { get; set; }
 
         // Status
-        public string StatusMessage { get; set; }
+        public string Status { get; set; }
         public bool BookingConfirmed { get; set; }
     }
 }
