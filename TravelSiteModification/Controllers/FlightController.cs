@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Data.SqlClient;
+using Microsoft.AspNetCore.SignalR;
+using TravelSiteModification.Hubs;
 using TravelSiteModification.Models;
 using TravelSiteModification.Services;
 using Utilities;
@@ -12,12 +14,15 @@ namespace TravelSiteModification.Controllers
         private readonly DBConnect db;
         private readonly FlightsAPIAccess flightsApi;
         private readonly IConfiguration appConfiguration;
+        private readonly IHubContext<NotificationHub> _hub;
 
-        public FlightController(FlightsAPIAccess flightApiAccess, IConfiguration appConfigurationParameter)
+        public FlightController(FlightsAPIAccess flightApiAccess, IConfiguration appConfigurationParameter, IHubContext<NotificationHub> hub)
         {
             db = new DBConnect();
             flightsApi = flightApiAccess;
             appConfiguration = appConfigurationParameter;
+            appConfiguration = appConfigurationParameter;
+            _hub = hub;
         }
 
         public IActionResult Index()
@@ -269,6 +274,11 @@ namespace TravelSiteModification.Controllers
                     "Database error while saving your booking: " + ex.Message;
             }
 
+            string message =
+                $"{model.FirstName} booked a flight from {ViewBag.DepartureCity} " +
+                $"to {ViewBag.ArrivalCity}. Total: {model.Price:C}";
+
+            await _hub.Clients.All.SendAsync("ReceiveNotification", message);
             return View("~/Views/TravelSite/FlightBooking.cshtml", model);
         }
 

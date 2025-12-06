@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using TravelSiteModification.Hubs;
 using TravelSiteModification.Models;
 using Utilities;
 
@@ -11,6 +13,12 @@ namespace TravelSiteModification.Controllers
     public class CarBookingController : Controller
     {
         private readonly DBConnect db = new DBConnect();
+        private readonly IHubContext<NotificationHub> _hub;
+
+        public CarBookingController(IHubContext<NotificationHub> hub)
+        {
+            _hub = hub;
+        }
 
         // GET /CarBooking
         public IActionResult Index()
@@ -164,12 +172,17 @@ namespace TravelSiteModification.Controllers
 
                 if (rows > 0)
                 {
-                    // update availability
+                    // Update availability
                     SqlCommand updateCar = new SqlCommand();
                     updateCar.CommandType = CommandType.StoredProcedure;
                     updateCar.CommandText = "UpdateCarAvailability";
                     updateCar.Parameters.AddWithValue("@CarID", carId);
                     db.DoUpdateUsingCmdObj(updateCar);
+
+                    _hub.Clients.All.SendAsync(
+                        "ReceiveNotification",
+                        $"{model.FirstName} just booked a {model.CarModel} ({model.CarType}) for {pickup:MM/dd} - {dropoff:MM/dd}!"
+                    );
 
                     return "Success";
                 }
@@ -183,6 +196,7 @@ namespace TravelSiteModification.Controllers
                 return $"<p class='alert alert-danger'>❌ Error: {ex.Message}</p>";
             }
         }
+
 
         // Called when user clicks “Book This Car”
         [HttpPost]
