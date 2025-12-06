@@ -21,6 +21,37 @@
     </style>
 </head>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/notificationHub")
+        .build();
+
+    let notifCount = 0;
+
+    connection.on("ReceiveNotification", function (message) {
+
+        notifCount++;
+        document.getElementById("notifCount").innerText = notifCount;
+        document.getElementById("notifCount").style.display = "inline";
+
+        const list = document.getElementById("notifList");
+
+        // Remove “no notifications”
+        if (list.children.length === 3) list.innerHTML = "";
+
+        // Add new notification
+        list.innerHTML += `
+            <li class="dropdown-item">
+                ${message}
+            </li>
+        `;
+    });
+
+    connection.start().catch(err => console.error(err));
+</script>
+
 <body>
     @{
         var firstName = HttpContextAccessor.HttpContext.Session.GetString("UserFirstName");
@@ -63,6 +94,20 @@
 
                     @if (!string.IsNullOrEmpty(firstName))
                     {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link position-relative" id="notificationBell" data-bs-toggle="dropdown" href="#">
+                                🔔
+                                <span id="notifCount" class="badge bg-danger position-absolute top-0 start-100 translate-middle"
+                                      style="display:none;">0</span>
+                            </a>
+
+                            <ul class="dropdown-menu dropdown-menu-end" id="notifList">
+                                <li class="dropdown-header">Notifications</li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li class="text-center text-muted">No notifications</li>
+                            </ul>
+                        </li>
+
                         <li class="nav-item">
                             <a class="nav-link text-dark fw-semibold"
                                asp-controller="Trips"

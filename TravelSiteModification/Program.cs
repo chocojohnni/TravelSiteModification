@@ -1,4 +1,5 @@
 using TravelSiteModification.Services;
+using TravelSiteModification.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,6 +62,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 app.UseAuthorization();
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.MapControllerRoute(
     name: "default",

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using Microsoft.AspNetCore.SignalR;
+using TravelSiteModification.Hubs;
 using TravelSiteModification.Models;
 using Utilities;
 
@@ -9,6 +11,12 @@ namespace TravelSiteModification.Controllers
 {
     public class HotelBookingController : Controller
     {
+        private readonly IHubContext<NotificationHub> _hub;
+        public HotelBookingController(IHubContext<NotificationHub> hub)
+        {
+            _hub = hub;
+        }
+
         public IActionResult Index()
         {
             int? hotelId = HttpContext.Session.GetInt32("SelectedHotelID");
@@ -98,7 +106,7 @@ namespace TravelSiteModification.Controllers
         }
 
         [HttpPost]
-        public IActionResult ConfirmBooking(HotelBookingViewModel model)
+        public async Task<IActionResult> ConfirmBooking(HotelBookingViewModel model)
         {
             int? hotelId = HttpContext.Session.GetInt32("SelectedHotelID");
             int? roomId = HttpContext.Session.GetInt32("SelectedRoomID");
@@ -153,6 +161,7 @@ namespace TravelSiteModification.Controllers
                     // Add to vacation package system
                     int packageId = GetOrCreateOpenVacationPackage(userId, model.TotalPrice);
 
+                    // Insert hotel into package
                     SqlCommand pkgCmd = new SqlCommand
                     {
                         CommandType = CommandType.StoredProcedure,
@@ -165,7 +174,14 @@ namespace TravelSiteModification.Controllers
                     db.DoUpdateUsingCmdObj(pkgCmd);
 
                     TempData["Success"] = "Booking confirmed and added to your vacation package!";
+
+                    string message =
+                        $"{model.FirstName} booked a hotel room at {model.HotelName} ({model.RoomType}) " +
+                        $"from {checkIn} to {checkOut}. Total: {model.TotalPrice.ToString("C")}";
+
+                    await _hub.Clients.All.SendAsync("ReceiveNotification", message);
                 }
+
                 else
                 {
                     TempData["Error"] = "Booking failed.";
